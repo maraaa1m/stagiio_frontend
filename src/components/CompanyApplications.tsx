@@ -19,15 +19,16 @@ import {
   Search,
   Filter,
   ArrowRight,
-  FileText
+  FileText,
+  Clock
 } from 'lucide-react';
 import { useNavigate, Link } from 'react-router-dom';
-import axios from 'axios';
+import api from '@/api';
 import { toast, Toaster } from 'sonner';
 
 interface Application {
   id: number;
-  status: 'PENDING' | 'ACCEPTED' | 'REFUSED';
+  status: 'PENDING' | 'ACCEPTED' | 'REFUSED' | 'VALIDATED' | 'ONGOING' | 'PENDING_CERT' | 'COMPLETED';
   matchingScore: number;
   student: {
     firstName: string;
@@ -41,6 +42,25 @@ interface Application {
   };
   offer: string; // Offer title
 }
+
+const mapApplications = (data: any[]) => {
+  return data.map((a: any) => ({
+    id: a.id,
+    status: a.status,
+    matchingScore: a.matchingScore || a.matching_score || 0,
+    student: {
+      firstName: a.student?.firstName || a.student?.first_name || '',
+      lastName: a.student?.lastName || a.student?.last_name || '',
+      email: a.student?.email || '',
+      photo: a.student?.profile_photo || a.student?.profilePhoto || a.student?.photo || '',
+      skills: a.student?.skills || [],
+      githubLink: a.student?.githubLink || a.student?.github_link || '',
+      portfolioLink: a.student?.portfolioLink || a.student?.portfolio_link || '',
+      cv: a.student?.cv || a.student?.resume || a.student?.cv_url || a.student?.cv_file || ''
+    },
+    offer: a.offer_title || a.offer || ''
+  })).sort((a: any, b: any) => b.matchingScore - a.matchingScore);
+};
 
 const CompanyApplications = () => {
   const navigate = useNavigate();
@@ -61,32 +81,11 @@ const CompanyApplications = () => {
   useEffect(() => {
     const fetchApplications = async () => {
       setIsLoading(true);
-      const token = localStorage.getItem('access_token');
-      const headers = { Authorization: `Bearer ${token}` };
       
       try {
-        const response = await axios.get('/api/company/applications/', { headers });
-        const data = Array.isArray(response.data) ? response.data : (response.data?.applications || []);
-        
-        // Map backend fields to handle snake_case from Django
-        const mapped = data.map((a: any) => ({
-          id: a.id,
-          status: a.status,
-          matchingScore: a.matchingScore || a.matching_score || 0,
-          student: {
-            firstName: a.student?.firstName || a.student?.first_name || '',
-            lastName: a.student?.lastName || a.student?.last_name || '',
-            email: a.student?.email || '',
-            photo: a.student?.profile_photo || a.student?.profilePhoto || a.student?.photo || '',
-            skills: a.student?.skills || [],
-            githubLink: a.student?.githubLink || a.student?.github_link || '',
-            portfolioLink: a.student?.portfolioLink || a.student?.portfolio_link || '',
-            cv: a.student?.cv || a.student?.resume || a.student?.cv_url || a.student?.cv_file || ''
-          },
-          offer: a.offer_title || a.offer || ''
-        }));
-
-        setApplications(mapped.sort((a: any, b: any) => b.matchingScore - a.matchingScore));
+        const response = await api.get('/api/company/applications/');
+        const data = Array.isArray(response.data) ? response.data : (response.data?.applications || response.data?.results || []);
+        setApplications(mapApplications(data));
       } catch (err) {
         console.error('Error fetching applications:', err);
         toast.error('Failed to load applications.');
@@ -100,11 +99,8 @@ const CompanyApplications = () => {
 
   const handleAccept = async (id: number) => {
     setIsActionLoading(id);
-    const token = localStorage.getItem('access_token');
     try {
-      await axios.put(`/api/company/applications/${id}/accept/`, {}, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      await api.put(`/api/company/applications/${id}/accept/`, {});
       toast.success('Application accepted!');
       setApplications(prev => prev.map(app => app.id === id ? { ...app, status: 'ACCEPTED' } : app));
     } catch (err) {
@@ -118,17 +114,30 @@ const CompanyApplications = () => {
     if (!refuseModal.appId) return;
     const id = refuseModal.appId;
     setIsActionLoading(id);
-    const token = localStorage.getItem('access_token');
     try {
-      await axios.put(`/api/company/applications/${id}/refuse/`, { reason: refuseReason }, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      await api.put(`/api/company/applications/${id}/refuse/`, { reason: refuseReason });
       toast.success('Application refused.');
       setApplications(prev => prev.map(app => app.id === id ? { ...app, status: 'REFUSED' } : app));
       setRefuseModal({ isOpen: false, appId: null });
       setRefuseReason('');
     } catch (err) {
       toast.error('Failed to refuse application.');
+    } finally {
+      setIsActionLoading(null);
+    }
+  };
+
+  const handleEndInternship = async (appId: number) => {
+    setIsActionLoading(appId);
+    try {
+      await api.post(`/api/company/applications/${appId}/end-internship/`, {});
+      toast.success('Internship marked as ended. Waiting for admin certification.');
+      // Refresh list
+      const response = await api.get('/api/company/applications/');
+      const data = response.data.applications || response.data.results || response.data;
+      setApplications(mapApplications(data));
+    } catch (err) {
+      toast.error('Failed to mark internship as ended.');
     } finally {
       setIsActionLoading(null);
     }
@@ -224,7 +233,7 @@ const CompanyApplications = () => {
           {/* Filter Tabs */}
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2 p-1.5 bg-paper rounded-2xl w-fit border border-gray-100">
-              {['ALL', 'PENDING', 'ACCEPTED', 'REFUSED'].map(tab => (
+              {['ALL', 'PENDING', 'ACCEPTED', 'VALIDATED', 'PENDING_CERT', 'REFUSED'].map(tab => (
                 <button
                   key={tab}
                   onClick={() => setActiveTab(tab)}
@@ -234,7 +243,7 @@ const CompanyApplications = () => {
                       : 'text-navy-900/40 hover:text-navy-900'
                   }`}
                 >
-                  {tab}
+                  {tab.replace('_', ' ')}
                 </button>
               ))}
             </div>
@@ -321,6 +330,16 @@ const CompanyApplications = () => {
                     </div>
 
                     <div className="flex items-center gap-3">
+                      {(app.status === 'VALIDATED' || app.status === 'ONGOING') && (
+                        <button 
+                          onClick={() => handleEndInternship(app.id)}
+                          disabled={isActionLoading !== null}
+                          className="px-6 py-4 bg-orange-500 text-white rounded-[1.5rem] hover:bg-orange-600 transition-all font-bold text-[11px] uppercase tracking-widest shadow-xl shadow-orange-500/10 flex items-center gap-3 disabled:opacity-50"
+                        >
+                          {isActionLoading === app.id ? <Loader2 size={16} className="animate-spin" /> : <Clock size={16} />}
+                          End Internship
+                        </button>
+                      )}
                       <button 
                         onClick={() => setReviewModal({ isOpen: true, app: app })}
                         className="px-8 py-4 bg-navy-900 text-white rounded-[1.5rem] hover:bg-blue-600 transition-all font-bold text-[11px] uppercase tracking-widest shadow-xl shadow-navy-900/10 flex items-center gap-3 mx-auto"

@@ -18,15 +18,23 @@ import {
   CreditCard
 } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import api from '@/api';
 import { ALGERIA_WILAYAS } from '../constants';
 
 const Register = () => {
-  const [type, setType] = useState<'student' | 'company'>('student');
+  const navigate = useNavigate();
+  const searchParams = new URLSearchParams(window.location.search);
+  const initialType = searchParams.get('type') === 'company' ? 'company' : 'student';
+  
+  const [type, setType] = useState<'student' | 'company'>(initialType);
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
-  const navigate = useNavigate();
+
+  // Chained Select Data
+  const [universities, setUniversities] = useState<{id: number, name: string}[]>([]);
+  const [faculties, setFaculties] = useState<{id: number, name: string}[]>([]);
+  const [departments, setDepartments] = useState<{id: number, name: string}[]>([]);
 
   const [studentData, setStudentData] = useState({
     firstName: '',
@@ -35,9 +43,11 @@ const Register = () => {
     password: '',
     phoneNumber: '',
     univWillaya: '',
-    // department is now sent as the string code — backend maps 'IFA'/'TLSI'/'MI' to FK
-    department: '',
+    universityId: '',
+    facultyId: '',
+    departmentId: '',
     socialSecurityNumber: '',
+    idCardNumber: '',
   });
 
   const [companyData, setCompanyData] = useState({
@@ -51,6 +61,49 @@ const Register = () => {
     registreCommerce: null as File | null,
   });
 
+  React.useEffect(() => {
+    const fetchUniversities = async () => {
+      try {
+        const response = await api.get('/api/universities/');
+        // Handle DRF results if present, fallback to raw response data
+        const data = response.data.results || response.data;
+        setUniversities(Array.isArray(data) ? data : []);
+      } catch (err) {
+        console.error('Failed to fetch universities:', err);
+      }
+    };
+    fetchUniversities();
+  }, []);
+
+  const handleUniversityChange = async (univId: string) => {
+    setStudentData(prev => ({ ...prev, universityId: univId, facultyId: '', departmentId: '' }));
+    setFaculties([]);
+    setDepartments([]);
+    if (!univId) return;
+    try {
+      // Updated to match Technical Integration Spec: GET /api/faculties/${universityId}/
+      const response = await api.get(`/api/faculties/${univId}/`);
+      const data = response.data.results || response.data;
+      setFaculties(Array.isArray(data) ? data : []);
+    } catch (err) {
+      console.error('Failed to fetch faculties:', err);
+    }
+  };
+
+  const handleFacultyChange = async (facId: string) => {
+    setStudentData(prev => ({ ...prev, facultyId: facId, departmentId: '' }));
+    setDepartments([]);
+    if (!facId) return;
+    try {
+      // Updated to match Technical Integration Spec: GET /api/departments/${facultyId}/
+      const response = await api.get(`/api/departments/${facId}/`);
+      const data = response.data.results || response.data;
+      setDepartments(Array.isArray(data) ? data : []);
+    } catch (err) {
+      console.error('Failed to fetch departments:', err);
+    }
+  };
+
   const handleStudentSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!studentData.email.endsWith('.dz')) {
@@ -61,18 +114,28 @@ const Register = () => {
     setIsLoading(true);
     setError('');
 
+    // Map frontend fields to backend expected fields
+    const payload = {
+      firstName: studentData.firstName,
+      lastName: studentData.lastName,
+      email: studentData.email,
+      password: studentData.password,
+      phoneNumber: studentData.phoneNumber,
+      university: studentData.universityId, // primary key ID
+      faculty: studentData.facultyId,       // primary key ID
+      department: studentData.departmentId, // primary key ID
+      univWillaya: studentData.univWillaya,
+      university_wilaya: studentData.univWillaya,
+      univ_willaya: studentData.univWillaya,
+      socialSecurityNumber: studentData.socialSecurityNumber,
+      social_security_number: studentData.socialSecurityNumber,
+      IDCardNumber: studentData.idCardNumber,
+      id_card_number: studentData.idCardNumber,
+      idCardNumber: studentData.idCardNumber
+    };
+
     try {
-      // Field names match StudentRegisterSerializer exactly
-      const response = await axios.post('/api/register/student/', {
-        firstName: studentData.firstName,
-        lastName: studentData.lastName,
-        email: studentData.email,
-        password: studentData.password,
-        phoneNumber: studentData.phoneNumber,
-        univWillaya: studentData.univWillaya,
-        department: studentData.department,   // backend maps string code → FK
-        socialSecurityNumber: studentData.socialSecurityNumber,
-      });
+      const response = await api.post('/api/register/student/', payload);
       
       const data = response.data;
       const tokens = data.tokens || {};
@@ -85,11 +148,12 @@ const Register = () => {
         localStorage.setItem('user_role', 'STUDENT');
         navigate('/profile/setup');
       } else {
+        // If no tokens, they must login first to get authenticated for setup
         navigate('/login');
       }
     } catch (err: any) {
       console.error('Registration error:', err);
-      setError(err.response?.data?.detail || err.response?.data?.email?.[0] || 'Registration failed. Please try again.');
+      setError(err.response?.data?.detail || 'Registration failed. Please try again.');
     } finally {
       setIsLoading(false);
     }
@@ -106,7 +170,6 @@ const Register = () => {
     setError('');
 
     const formData = new FormData();
-    // FIX: field names now match what CompanyRegisterSerializer reads (camelCase)
     formData.append('companyName', companyData.companyName);
     formData.append('email', companyData.email);
     formData.append('password', companyData.password);
@@ -117,7 +180,7 @@ const Register = () => {
     formData.append('registreCommerce', companyData.registreCommerce);
 
     try {
-      const response = await axios.post('/api/register/company/', formData, {
+      const response = await api.post('/api/register/company/', formData, {
         headers: { 'Content-Type': 'multipart/form-data' }
       });
       const data = response.data;
@@ -141,398 +204,480 @@ const Register = () => {
   };
 
   return (
-    <div className="min-h-screen bg-paper flex items-center justify-center px-6 py-20 relative overflow-hidden">
-      {/* Background elements */}
-      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-full -z-10">
-        <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-blue-100/40 rounded-full blur-[120px]" />
-        <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-blue-50/40 rounded-full blur-[120px]" />
-      </div>
-
-      <motion.div 
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="w-full max-w-2xl"
-      >
-        <div className="text-center mb-10">
-          <Link to="/" className="inline-flex items-center gap-2 mb-8">
-            <div className="w-2.5 h-2.5 rounded-full bg-blue-600"></div>
-            <span className="font-bold text-xl text-navy-900">Stag<span className="text-blue-600">.io</span></span>
+    <div className="min-h-screen bg-white flex flex-col relative overflow-hidden">
+      {/* Navigation */}
+      <nav className="fixed top-0 left-0 right-0 z-50 bg-white/80 backdrop-blur-md border-b border-gray-100">
+        <div className="container mx-auto px-6 h-20 flex items-center justify-between">
+          <Link to="/" className="flex items-center gap-2 group">
+            <div className="w-2.5 h-2.5 rounded-full bg-blue-600 transition-transform group-hover:scale-125" />
+            <span className="font-display font-bold text-xl text-navy-900 tracking-tight">Stag<span className="text-blue-600 italic">.io</span></span>
           </Link>
-          <h1 className="text-3xl font-display font-bold text-navy-900 mb-2">Create Account</h1>
-          <p className="text-navy-900/40 font-medium">Join the premier Algerian internship ecosystem</p>
+          <div className="flex items-center gap-4">
+            <span className="text-[11px] font-bold uppercase tracking-widest text-navy-900/30 hidden sm:block">Already have an account?</span>
+            <Link to="/login" className="px-6 py-2.5 bg-paper text-navy-900 rounded-full text-[11px] font-bold uppercase tracking-widest hover:bg-navy-900 hover:text-white transition-all">
+              Sign In
+            </Link>
+          </div>
         </div>
+      </nav>
 
-        {/* Type Toggle */}
-        <div className="flex p-1.5 bg-gray-100 rounded-[1.5rem] mb-10 max-w-sm mx-auto">
-          <button 
-            onClick={() => setType('student')}
-            className={`flex-1 py-3 text-[11px] font-bold uppercase tracking-widest rounded-2xl transition-all ${type === 'student' ? 'bg-white text-blue-600 shadow-sm' : 'text-navy-900/40 hover:text-navy-900'}`}
-          >
-            I am a Student
-          </button>
-          <button 
-            onClick={() => setType('company')}
-            className={`flex-1 py-3 text-[11px] font-bold uppercase tracking-widest rounded-2xl transition-all ${type === 'company' ? 'bg-white text-blue-600 shadow-sm' : 'text-navy-900/40 hover:text-navy-900'}`}
-          >
-            I am a Company
-          </button>
-        </div>
-
-        <div className="bg-white p-8 md:p-12 rounded-[3rem] shadow-premium border border-white relative">
-          {error && (
-            <div className="mb-8 p-4 bg-red-50 border border-red-100 text-red-600 text-sm font-bold rounded-2xl">
-              {error}
+      <main className="flex-1 flex items-center justify-center pt-32 pb-20 px-6">
+        <motion.div 
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="w-full max-w-2xl"
+        >
+          <div className="text-center mb-16 space-y-6">
+            <div className="inline-flex items-center gap-3 px-4 py-2 rounded-full bg-blue-50 border border-blue-100">
+              <div className="w-2 h-2 rounded-full bg-blue-600" />
+              <span className="text-[11px] font-bold uppercase tracking-[0.2em] text-blue-600 italic">Join the Bridge</span>
             </div>
-          )}
+            <h1 className="text-5xl md:text-6xl font-display font-bold text-navy-900 tracking-tight leading-[1.1] text-balance">
+              Create Your <br />
+              <span className="text-blue-600 italic">Professional Identity.</span>
+            </h1>
+            <p className="text-lg text-navy-900/40 font-medium max-w-md mx-auto">
+              Join the national infrastructure connecting Algerian talent with high-impact professional experiences.
+            </p>
+          </div>
 
-          <AnimatePresence mode="wait">
-            {type === 'student' ? (
-              <motion.form 
-                key="student"
-                initial={{ opacity: 0, x: -10 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: 10 }}
-                onSubmit={handleStudentSubmit} 
-                className="grid md:grid-cols-2 gap-6"
+          {/* Type Toggle */}
+          <div className="flex p-1.5 bg-paper rounded-[2rem] border border-gray-100 mb-12 max-w-sm mx-auto shadow-sm">
+            <button 
+              onClick={() => setType('student')}
+              className={`flex-1 py-3.5 text-[11px] font-bold uppercase tracking-widest rounded-3xl transition-all ${type === 'student' ? 'bg-white text-blue-600 shadow-md shadow-navy-900/5' : 'text-navy-900/40 hover:text-navy-900'}`}
+            >
+              I am a Student
+            </button>
+            <button 
+              onClick={() => setType('company')}
+              className={`flex-1 py-3.5 text-[11px] font-bold uppercase tracking-widest rounded-3xl transition-all ${type === 'company' ? 'bg-white text-blue-600 shadow-md shadow-navy-900/5' : 'text-navy-900/40 hover:text-navy-900'}`}
+            >
+              I am a Company
+            </button>
+          </div>
+
+          <div className="relative group">
+            {error && (
+              <motion.div 
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                className="mb-8 p-6 bg-red-50 border border-red-100 text-red-600 text-sm font-bold rounded-[2rem] flex items-center gap-3"
               >
-                <div className="space-y-2">
-                  <label className="text-[11px] font-bold uppercase tracking-widest text-navy-900/40 ml-4">First Name</label>
-                  <div className="relative group">
-                    <div className="absolute left-5 top-1/2 -translate-y-1/2 text-navy-900/30 group-focus-within:text-blue-600 transition-colors">
-                      <User size={18} />
-                    </div>
-                    <input 
-                      required
-                      type="text"
-                      value={studentData.firstName}
-                      onChange={(e) => setStudentData({ ...studentData, firstName: e.target.value })}
-                      placeholder="First Name"
-                      className="w-full bg-paper border border-gray-100 rounded-2xl py-4 pl-14 pr-6 outline-none focus:border-blue-600/30 focus:ring-4 focus:ring-blue-600/5 transition-all font-medium text-navy-900"
-                    />
-                  </div>
-                </div>
+                <div className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
+                {error}
+              </motion.div>
+            )}
 
-                <div className="space-y-2">
-                  <label className="text-[11px] font-bold uppercase tracking-widest text-navy-900/40 ml-4">Last Name</label>
-                  <div className="relative group">
-                    <div className="absolute left-5 top-1/2 -translate-y-1/2 text-navy-900/30 group-focus-within:text-blue-600 transition-colors">
-                      <User size={18} />
+            <AnimatePresence mode="wait">
+              {type === 'student' ? (
+                <motion.form 
+                  key="student"
+                  initial={{ opacity: 0, x: -10 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: 10 }}
+                  onSubmit={handleStudentSubmit} 
+                  className="space-y-6"
+                >
+                  <div className="grid md:grid-cols-2 gap-6">
+                    <div className="space-y-2">
+                      <label className="text-[11px] font-bold uppercase tracking-widest text-navy-900/30 ml-6">First Name</label>
+                      <div className="relative group/field">
+                        <div className="absolute left-6 top-1/2 -translate-y-1/2 text-navy-900/20 group-focus-within/field:text-blue-600 transition-colors">
+                          <User size={18} />
+                        </div>
+                        <input 
+                          required
+                          type="text"
+                          value={studentData.firstName}
+                          onChange={(e) => setStudentData({ ...studentData, firstName: e.target.value })}
+                          placeholder="Ahmed"
+                          className="w-full bg-paper border border-gray-100 rounded-[2rem] py-5 pl-16 pr-8 outline-none focus:border-blue-600/30 focus:ring-8 focus:ring-blue-600/5 transition-all font-medium text-navy-900"
+                        />
+                      </div>
                     </div>
-                    <input 
-                      required
-                      type="text"
-                      value={studentData.lastName}
-                      onChange={(e) => setStudentData({ ...studentData, lastName: e.target.value })}
-                      placeholder="Last Name"
-                      className="w-full bg-paper border border-gray-100 rounded-2xl py-4 pl-14 pr-6 outline-none focus:border-blue-600/30 focus:ring-4 focus:ring-blue-600/5 transition-all font-medium text-navy-900"
-                    />
-                  </div>
-                </div>
 
-                <div className="md:col-span-2 space-y-2">
-                  <label className="text-[11px] font-bold uppercase tracking-widest text-navy-900/40 ml-4">University Email (.dz)</label>
-                  <div className="relative group">
-                    <div className="absolute left-5 top-1/2 -translate-y-1/2 text-navy-900/30 group-focus-within:text-blue-600 transition-colors">
-                      <Mail size={18} />
-                    </div>
-                    <input 
-                      required
-                      type="email"
-                      value={studentData.email}
-                      onChange={(e) => setStudentData({ ...studentData, email: e.target.value })}
-                      placeholder="student@univ-constantine02.dz"
-                      className="w-full bg-paper border border-gray-100 rounded-2xl py-4 pl-14 pr-6 outline-none focus:border-blue-600/30 focus:ring-4 focus:ring-blue-600/5 transition-all font-medium text-navy-900"
-                    />
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <label className="text-[11px] font-bold uppercase tracking-widest text-navy-900/40 ml-4">Password</label>
-                  <div className="relative group">
-                    <div className="absolute left-5 top-1/2 -translate-y-1/2 text-navy-900/30 group-focus-within:text-blue-600 transition-colors">
-                      <Lock size={18} />
-                    </div>
-                    <input 
-                      required
-                      type={showPassword ? "text" : "password"}
-                      value={studentData.password}
-                      onChange={(e) => setStudentData({ ...studentData, password: e.target.value })}
-                      placeholder="••••••••"
-                      className="w-full bg-paper border border-gray-100 rounded-2xl py-4 pl-14 pr-14 outline-none focus:border-blue-600/30 focus:ring-4 focus:ring-blue-600/5 transition-all font-medium text-navy-900"
-                    />
-                    <button 
-                      type="button"
-                      onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-5 top-1/2 -translate-y-1/2 text-navy-900/30 hover:text-navy-900 transition-colors"
-                    >
-                      {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-                    </button>
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <label className="text-[11px] font-bold uppercase tracking-widest text-navy-900/40 ml-4">Phone Number</label>
-                  <div className="relative group">
-                    <div className="absolute left-5 top-1/2 -translate-y-1/2 text-navy-900/30 group-focus-within:text-blue-600 transition-colors">
-                      <Phone size={18} />
-                    </div>
-                    <input 
-                      required
-                      type="tel"
-                      value={studentData.phoneNumber}
-                      onChange={(e) => setStudentData({ ...studentData, phoneNumber: e.target.value })}
-                      placeholder="0550 00 00 00"
-                      className="w-full bg-paper border border-gray-100 rounded-2xl py-4 pl-14 pr-6 outline-none focus:border-blue-600/30 focus:ring-4 focus:ring-blue-600/5 transition-all font-medium text-navy-900"
-                    />
-                  </div>
-                </div>
-
-                <div className="md:col-span-2 space-y-2">
-                  <label className="text-[11px] font-bold uppercase tracking-widest text-navy-900/40 ml-4">University Wilaya</label>
-                  <div className="relative group">
-                    <div className="absolute left-5 top-1/2 -translate-y-1/2 text-navy-900/30 group-focus-within:text-blue-600 transition-colors">
-                      <MapPin size={18} />
-                    </div>
-                    <select 
-                      required
-                      value={studentData.univWillaya}
-                      onChange={(e) => setStudentData({ ...studentData, univWillaya: e.target.value })}
-                      className="w-full bg-paper border border-gray-100 rounded-2xl py-4 pl-14 pr-6 outline-none focus:border-blue-600/30 focus:ring-4 focus:ring-blue-600/5 transition-all font-medium text-navy-900 appearance-none"
-                    >
-                      <option value="">Select Wilaya</option>
-                      {ALGERIA_WILAYAS.map(w => <option key={w} value={w}>{w}</option>)}
-                    </select>
-                  </div>
-                </div>
-
-                <div className="md:col-span-2 space-y-2">
-                  <label className="text-[11px] font-bold uppercase tracking-widest text-navy-900/40 ml-4">Department</label>
-                  <div className="relative group">
-                    <div className="absolute left-5 top-1/2 -translate-y-1/2 text-navy-900/30 group-focus-within:text-blue-600 transition-colors">
-                      <GraduationCap size={18} />
-                    </div>
-                    <select required
-                      value={studentData.department}
-                      onChange={(e) => setStudentData({...studentData, department: e.target.value})}
-                      className="w-full bg-paper border border-gray-100 rounded-2xl py-4 pl-14 pr-6 outline-none focus:border-blue-600/30 focus:ring-4 focus:ring-blue-600/5 transition-all font-medium text-navy-900 appearance-none"
-                    >
-                      <option value="">Select your department</option>
-                      {/* Values are the string codes the backend maps to FK IDs */}
-                      <option value="IFA">Informatique Fondamentale et ses Applications (IFA)</option>
-                      <option value="MI">Mathématiques et Informatique (MI)</option>
-                      <option value="TLSI">Technologies des Logiciels et Systèmes d'Information (TLSI)</option>
-                    </select>
-                  </div>
-                </div>
-
-                <div className="md:col-span-2 space-y-2">
-                  <label className="text-[11px] font-bold uppercase tracking-widest text-navy-900/40 ml-4">Social Security Number</label>
-                  <div className="relative group">
-                    <div className="absolute left-5 top-1/2 -translate-y-1/2 text-navy-900/30 group-focus-within:text-blue-600 transition-colors">
-                      <CreditCard size={18} />
-                    </div>
-                    <input
-                      type="text"
-                      value={studentData.socialSecurityNumber}
-                      onChange={(e) => setStudentData({...studentData, socialSecurityNumber: e.target.value})}
-                      placeholder="ex: 19912524678"
-                      className="w-full bg-paper border border-gray-100 rounded-2xl py-4 pl-14 pr-6 outline-none focus:border-blue-600/30 focus:ring-4 focus:ring-blue-600/5 transition-all font-medium text-navy-900"
-                    />
-                  </div>
-                </div>
-
-                <div className="md:col-span-2 pt-4">
-                  <button 
-                    disabled={isLoading}
-                    type="submit"
-                    className="w-full py-5 bg-navy-900 text-white rounded-2xl font-bold text-[13px] uppercase tracking-widest hover:bg-blue-600 transition-all shadow-xl shadow-navy-900/10 active:scale-[0.98] flex items-center justify-center gap-3 disabled:opacity-70 disabled:cursor-not-allowed"
-                  >
-                    {isLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : <>Create Student Account <ArrowRight size={18} /></>}
-                  </button>
-                </div>
-              </motion.form>
-            ) : (
-              <motion.form 
-                key="company"
-                initial={{ opacity: 0, x: 10 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -10 }}
-                onSubmit={handleCompanySubmit} 
-                className="grid md:grid-cols-2 gap-6"
-              >
-                <div className="md:col-span-2 space-y-2">
-                  <label className="text-[11px] font-bold uppercase tracking-widest text-navy-900/40 ml-4">Company Name</label>
-                  <div className="relative group">
-                    <div className="absolute left-5 top-1/2 -translate-y-1/2 text-navy-900/30 group-focus-within:text-blue-600 transition-colors">
-                      <Building2 size={18} />
-                    </div>
-                    <input 
-                      required
-                      type="text"
-                      value={companyData.companyName}
-                      onChange={(e) => setCompanyData({ ...companyData, companyName: e.target.value })}
-                      placeholder="Company Name"
-                      className="w-full bg-paper border border-gray-100 rounded-2xl py-4 pl-14 pr-6 outline-none focus:border-blue-600/30 focus:ring-4 focus:ring-blue-600/5 transition-all font-medium text-navy-900"
-                    />
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <label className="text-[11px] font-bold uppercase tracking-widest text-navy-900/40 ml-4">Professional Email</label>
-                  <div className="relative group">
-                    <div className="absolute left-5 top-1/2 -translate-y-1/2 text-navy-900/30 group-focus-within:text-blue-600 transition-colors">
-                      <Mail size={18} />
-                    </div>
-                    <input 
-                      required
-                      type="email"
-                      value={companyData.email}
-                      onChange={(e) => setCompanyData({ ...companyData, email: e.target.value })}
-                      placeholder="Email@company.com"
-                      className="w-full bg-paper border border-gray-100 rounded-2xl py-4 pl-14 pr-6 outline-none focus:border-blue-600/30 focus:ring-4 focus:ring-blue-600/5 transition-all font-medium text-navy-900"
-                    />
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <label className="text-[11px] font-bold uppercase tracking-widest text-navy-900/40 ml-4">Password</label>
-                  <div className="relative group">
-                    <div className="absolute left-5 top-1/2 -translate-y-1/2 text-navy-900/30 group-focus-within:text-blue-600 transition-colors">
-                      <Lock size={18} />
-                    </div>
-                    <input 
-                      required
-                      type={showPassword ? "text" : "password"}
-                      value={companyData.password}
-                      onChange={(e) => setCompanyData({ ...companyData, password: e.target.value })}
-                      placeholder="••••••••"
-                      className="w-full bg-paper border border-gray-100 rounded-2xl py-4 pl-14 pr-14 outline-none focus:border-blue-600/30 focus:ring-4 focus:ring-blue-600/5 transition-all font-medium text-navy-900"
-                    />
-                    <button 
-                      type="button"
-                      onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-5 top-1/2 -translate-y-1/2 text-navy-900/30 hover:text-navy-900 transition-colors"
-                    >
-                      {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-                    </button>
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <label className="text-[11px] font-bold uppercase tracking-widest text-navy-900/40 ml-4">Phone Number</label>
-                  <div className="relative group">
-                    <div className="absolute left-5 top-1/2 -translate-y-1/2 text-navy-900/30 group-focus-within:text-blue-600 transition-colors">
-                      <Phone size={18} />
-                    </div>
-                    <input 
-                      required
-                      type="tel"
-                      value={companyData.phoneNumber}
-                      onChange={(e) => setCompanyData({ ...companyData, phoneNumber: e.target.value })}
-                      placeholder="030 00 00 00"
-                      className="w-full bg-paper border border-gray-100 rounded-2xl py-4 pl-14 pr-6 outline-none focus:border-blue-600/30 focus:ring-4 focus:ring-blue-600/5 transition-all font-medium text-navy-900"
-                    />
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <label className="text-[11px] font-bold uppercase tracking-widest text-navy-900/40 ml-4">Location (Wilaya)</label>
-                  <div className="relative group">
-                    <div className="absolute left-5 top-1/2 -translate-y-1/2 text-navy-900/30 group-focus-within:text-blue-600 transition-colors">
-                      <MapPin size={18} />
-                    </div>
-                    <select 
-                      required
-                      value={companyData.location}
-                      onChange={(e) => setCompanyData({ ...companyData, location: e.target.value })}
-                      className="w-full bg-paper border border-gray-100 rounded-2xl py-4 pl-14 pr-6 outline-none focus:border-blue-600/30 focus:ring-4 focus:ring-blue-600/5 transition-all font-medium text-navy-900 appearance-none"
-                    >
-                      <option value="">Select Wilaya</option>
-                      {ALGERIA_WILAYAS.map(w => <option key={w} value={w}>{w}</option>)}
-                    </select>
-                  </div>
-                </div>
-
-                <div className="md:col-span-2 space-y-2">
-                  <label className="text-[11px] font-bold uppercase tracking-widest text-navy-900/40 ml-4">Company Website</label>
-                  <div className="relative group">
-                    <div className="absolute left-5 top-1/2 -translate-y-1/2 text-navy-900/30 group-focus-within:text-blue-600 transition-colors">
-                      <Globe size={18} />
-                    </div>
-                    <input 
-                      required
-                      type="url"
-                      value={companyData.website}
-                      onChange={(e) => setCompanyData({ ...companyData, website: e.target.value })}
-                      placeholder="https://company.com"
-                      className="w-full bg-paper border border-gray-100 rounded-2xl py-4 pl-14 pr-6 outline-none focus:border-blue-600/30 focus:ring-4 focus:ring-blue-600/5 transition-all font-medium text-navy-900"
-                    />
-                  </div>
-                </div>
-
-                <div className="md:col-span-2 space-y-2">
-                  <label className="text-[11px] font-bold uppercase tracking-widest text-navy-900/40 ml-4">
-                    Registre de Commerce (PDF) <span className="text-red-500">*</span>
-                  </label>
-                  <div className="relative group">
-                    <div className="absolute left-5 top-1/2 -translate-y-1/2 text-navy-900/30 group-focus-within:text-blue-600 transition-colors">
-                      <FileText size={18} />
-                    </div>
-                    <div className="relative">
-                      <input
-                        required
-                        type="file"
-                        accept=".pdf"
-                        onChange={(e) => setCompanyData({...companyData, registreCommerce: e.target.files?.[0] || null})}
-                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
-                      />
-                      <div className="w-full bg-paper border border-gray-100 rounded-2xl py-4 pl-14 pr-6 outline-none focus-within:border-blue-600/30 focus-within:ring-4 focus-within:ring-blue-600/5 transition-all font-medium text-navy-900 min-h-[58px] flex items-center">
-                        <span className={`block truncate ${!companyData.registreCommerce ? 'text-navy-900/40' : 'text-navy-900'}`}>
-                          {companyData.registreCommerce ? companyData.registreCommerce.name : "Select Registre de Commerce (PDF)"}
-                        </span>
+                    <div className="space-y-2">
+                      <label className="text-[11px] font-bold uppercase tracking-widest text-navy-900/30 ml-6">Last Name</label>
+                      <div className="relative group/field">
+                        <div className="absolute left-6 top-1/2 -translate-y-1/2 text-navy-900/20 group-focus-within/field:text-blue-600 transition-colors">
+                          <User size={18} />
+                        </div>
+                        <input 
+                          required
+                          type="text"
+                          value={studentData.lastName}
+                          onChange={(e) => setStudentData({ ...studentData, lastName: e.target.value })}
+                          placeholder="Benali"
+                          className="w-full bg-paper border border-gray-100 rounded-[2rem] py-5 pl-16 pr-8 outline-none focus:border-blue-600/30 focus:ring-8 focus:ring-blue-600/5 transition-all font-medium text-navy-900"
+                        />
                       </div>
                     </div>
                   </div>
-                </div>
 
-                <div className="md:col-span-2 space-y-2">
-                  <label className="text-[11px] font-bold uppercase tracking-widest text-navy-900/40 ml-4">Company Description</label>
-                  <div className="relative group">
-                    <div className="absolute left-5 top-6 text-navy-900/30 group-focus-within:text-blue-600 transition-colors">
-                      <FileText size={18} />
+                  <div className="space-y-2">
+                    <label className="text-[11px] font-bold uppercase tracking-widest text-navy-900/30 ml-6">University Email (.dz)</label>
+                    <div className="relative group/field">
+                      <div className="absolute left-6 top-1/2 -translate-y-1/2 text-navy-900/20 group-focus-within/field:text-blue-600 transition-colors">
+                        <Mail size={18} />
+                      </div>
+                      <input 
+                        required
+                        type="email"
+                        value={studentData.email}
+                        onChange={(e) => setStudentData({ ...studentData, email: e.target.value })}
+                        placeholder="a.benali@univ-constantine2.dz"
+                        className="w-full bg-paper border border-gray-100 rounded-[2rem] py-5 pl-16 pr-8 outline-none focus:border-blue-600/30 focus:ring-8 focus:ring-blue-600/5 transition-all font-medium text-navy-900"
+                      />
                     </div>
-                    <textarea 
-                      required
-                      value={companyData.description}
-                      onChange={(e) => setCompanyData({ ...companyData, description: e.target.value })}
-                      placeholder="Tell us about your company..."
-                      rows={4}
-                      className="w-full bg-paper border border-gray-100 rounded-2xl py-4 pl-14 pr-6 outline-none focus:border-blue-600/30 focus:ring-4 focus:ring-blue-600/5 transition-all font-medium text-navy-900 resize-none"
-                    />
                   </div>
-                </div>
 
-                <div className="md:col-span-2 pt-4">
-                  <button 
-                    disabled={isLoading}
-                    type="submit"
-                    className="w-full py-5 bg-navy-900 text-white rounded-2xl font-bold text-[13px] uppercase tracking-widest hover:bg-blue-600 transition-all shadow-xl shadow-navy-900/10 active:scale-[0.98] flex items-center justify-center gap-3 disabled:opacity-70 disabled:cursor-not-allowed"
-                  >
-                    {isLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : <>Register Company <ArrowRight size={18} /></>}
-                  </button>
-                </div>
-              </motion.form>
-            )}
-          </AnimatePresence>
-        </div>
+                  <div className="grid md:grid-cols-2 gap-6">
+                    <div className="space-y-2">
+                      <label className="text-[11px] font-bold uppercase tracking-widest text-navy-900/30 ml-6">Password</label>
+                      <div className="relative group/field">
+                        <div className="absolute left-6 top-1/2 -translate-y-1/2 text-navy-900/20 group-focus-within/field:text-blue-600 transition-colors">
+                          <Lock size={18} />
+                        </div>
+                        <input 
+                          required
+                          type={showPassword ? "text" : "password"}
+                          value={studentData.password}
+                          onChange={(e) => setStudentData({ ...studentData, password: e.target.value })}
+                          placeholder="••••••••"
+                          className="w-full bg-paper border border-gray-100 rounded-[2rem] py-5 pl-16 pr-16 outline-none focus:border-blue-600/30 focus:ring-8 focus:ring-blue-600/5 transition-all font-medium text-navy-900"
+                        />
+                        <button 
+                          type="button"
+                          onClick={() => setShowPassword(!showPassword)}
+                          className="absolute right-6 top-1/2 -translate-y-1/2 text-navy-900/20 hover:text-navy-900 transition-colors"
+                        >
+                          {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                        </button>
+                      </div>
+                    </div>
 
-        <p className="text-center mt-8 text-navy-900/40 font-medium">
-          Already have an account? {' '}
-          <Link to="/login" className="text-blue-600 font-bold hover:text-navy-900 transition-colors">
-            Sign In
-          </Link>
-        </p>
-      </motion.div>
+                    <div className="space-y-2">
+                      <label className="text-[11px] font-bold uppercase tracking-widest text-navy-900/30 ml-6">Phone Number</label>
+                      <div className="relative group/field">
+                        <div className="absolute left-6 top-1/2 -translate-y-1/2 text-navy-900/20 group-focus-within/field:text-blue-600 transition-colors">
+                          <Phone size={18} />
+                        </div>
+                        <input 
+                          required
+                          type="tel"
+                          value={studentData.phoneNumber}
+                          onChange={(e) => setStudentData({ ...studentData, phoneNumber: e.target.value })}
+                          placeholder="0560 00 00 00"
+                          className="w-full bg-paper border border-gray-100 rounded-[2rem] py-5 pl-16 pr-8 outline-none focus:border-blue-600/30 focus:ring-8 focus:ring-blue-600/5 transition-all font-medium text-navy-900"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="grid md:grid-cols-2 gap-6">
+                    <div className="space-y-2">
+                       <label className="text-[11px] font-bold uppercase tracking-widest text-navy-900/30 ml-6">University Wilaya</label>
+                       <div className="relative group/field">
+                         <div className="absolute left-6 top-1/2 -translate-y-1/2 text-navy-900/20 group-focus-within/field:text-blue-600 transition-colors">
+                           <MapPin size={18} />
+                         </div>
+                         <select 
+                           required
+                           value={studentData.univWillaya}
+                           onChange={(e) => setStudentData({ ...studentData, univWillaya: e.target.value })}
+                           className="w-full bg-paper border border-gray-100 rounded-[2rem] py-5 pl-16 pr-12 outline-none focus:border-blue-600/30 focus:ring-8 focus:ring-blue-600/5 transition-all font-medium text-navy-900 appearance-none bg-[url('data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20fill%3D%22none%22%20viewBox%3D%220%200%2020%2020%22%3E%3Cpath%20stroke%3D%22%236B7280%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%20stroke-width%3D%221.5%22%20d%3D%22m6%208%204%204%204-4%22%2F%3E%3C%2Fsvg%3E')] bg-[length:1.5rem_1.5rem] bg-[right_1.25rem_center] bg-no-repeat"
+                         >
+                           <option value="">Select Wilaya</option>
+                           {ALGERIA_WILAYAS.map(w => <option key={w} value={w}>{w}</option>)}
+                         </select>
+                       </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <label className="text-[11px] font-bold uppercase tracking-widest text-navy-900/30 ml-6">University</label>
+                      <div className="relative group/field">
+                        <div className="absolute left-6 top-1/2 -translate-y-1/2 text-navy-900/20 group-focus-within/field:text-blue-600 transition-colors">
+                          <Building2 size={18} />
+                        </div>
+                        <select 
+                          required
+                          value={studentData.universityId}
+                          onChange={(e) => handleUniversityChange(e.target.value)}
+                          className="w-full bg-paper border border-gray-100 rounded-[2rem] py-5 pl-16 pr-12 outline-none focus:border-blue-600/30 focus:ring-8 focus:ring-blue-600/5 transition-all font-medium text-navy-900 appearance-none bg-[url('data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20fill%3D%22none%22%20viewBox%3D%220%200%2020%2020%22%3E%3Cpath%20stroke%3D%22%236B7280%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%20stroke-width%3D%221.5%22%20d%3D%22m6%208%204%204%204-4%22%2F%3E%3C%2Fsvg%3E')] bg-[length:1.5rem_1.5rem] bg-[right_1.25rem_center] bg-no-repeat"
+                        >
+                          <option value="">Select University</option>
+                          {universities.map(u => <option key={u.id} value={u.id}>{u.name}</option>)}
+                        </select>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="grid md:grid-cols-2 gap-6">
+                    <div className="space-y-2">
+                      <label className="text-[11px] font-bold uppercase tracking-widest text-navy-900/30 ml-6">Faculty</label>
+                      <div className="relative group/field">
+                        <div className="absolute left-6 top-1/2 -translate-y-1/2 text-navy-900/20 group-focus-within/field:text-blue-600 transition-colors">
+                          <Building2 size={18} />
+                        </div>
+                        <select 
+                          required
+                          disabled={!studentData.universityId}
+                          value={studentData.facultyId}
+                          onChange={(e) => handleFacultyChange(e.target.value)}
+                          className="w-full bg-paper border border-gray-100 rounded-[2rem] py-5 pl-16 pr-12 outline-none focus:border-blue-600/30 focus:ring-8 focus:ring-blue-600/5 transition-all font-medium text-navy-900 appearance-none disabled:opacity-50 bg-[url('data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20fill%3D%22none%22%20viewBox%3D%220%200%2020%2020%22%3E%3Cpath%20stroke%3D%22%236B7280%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%20stroke-width%3D%221.5%22%20d%3D%22m6%208%204%204%204-4%22%2F%3E%3C%2Fsvg%3E')] bg-[length:1.5rem_1.5rem] bg-[right_1.25rem_center] bg-no-repeat"
+                        >
+                          <option value="">Select Faculty</option>
+                          {faculties.map(f => <option key={f.id} value={f.id}>{f.name}</option>)}
+                        </select>
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <label className="text-[11px] font-bold uppercase tracking-widest text-navy-900/30 ml-6">Department</label>
+                      <div className="relative group/field">
+                        <div className="absolute left-6 top-1/2 -translate-y-1/2 text-navy-900/20 group-focus-within/field:text-blue-600 transition-colors">
+                          <GraduationCap size={18} />
+                        </div>
+                        <select 
+                          required
+                          disabled={!studentData.facultyId}
+                          value={studentData.departmentId}
+                          onChange={(e) => setStudentData({...studentData, departmentId: e.target.value})}
+                          className="w-full bg-paper border border-gray-100 rounded-[2rem] py-5 pl-16 pr-12 outline-none focus:border-blue-600/30 focus:ring-8 focus:ring-blue-600/5 transition-all font-medium text-navy-900 appearance-none disabled:opacity-50 bg-[url('data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20fill%3D%22none%22%20viewBox%3D%220%200%2020%2020%22%3E%3Cpath%20stroke%3D%22%236B7280%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%20stroke-width%3D%221.5%22%20d%3D%22m6%208%204%204%204-4%22%2F%3E%3C%2Fsvg%3E')] bg-[length:1.5rem_1.5rem] bg-[right_1.25rem_center] bg-no-repeat"
+                        >
+                          <option value="">Select Department</option>
+                          {departments.map(d => <option key={d.id} value={d.id}>{d.name}</option>)}
+                        </select>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="grid md:grid-cols-2 gap-6">
+                    <div className="space-y-2">
+                      <label className="text-[11px] font-bold uppercase tracking-widest text-navy-900/30 ml-6">Social Security Number</label>
+                      <div className="relative group/field">
+                        <div className="absolute left-6 top-1/2 -translate-y-1/2 text-navy-900/20 group-focus-within/field:text-blue-600 transition-colors">
+                          <CreditCard size={18} />
+                        </div>
+                        <input
+                          type="text"
+                          value={studentData.socialSecurityNumber}
+                          onChange={(e) => setStudentData({...studentData, socialSecurityNumber: e.target.value})}
+                          placeholder="1 99 25 75 123 456 78"
+                          className="w-full bg-paper border border-gray-100 rounded-[2rem] py-5 pl-16 pr-8 outline-none focus:border-blue-600/30 focus:ring-8 focus:ring-blue-600/5 transition-all font-medium text-navy-900"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <label className="text-[11px] font-bold uppercase tracking-widest text-navy-900/30 ml-6">ID Card Number</label>
+                      <div className="relative group/field">
+                        <div className="absolute left-6 top-1/2 -translate-y-1/2 text-navy-900/20 group-focus-within/field:text-blue-600 transition-colors">
+                          <CreditCard size={18} />
+                        </div>
+                        <input
+                          required
+                          type="text"
+                          value={studentData.idCardNumber}
+                          onChange={(e) => setStudentData({...studentData, idCardNumber: e.target.value})}
+                          placeholder="123456789"
+                          className="w-full bg-paper border border-gray-100 rounded-[2rem] py-5 pl-16 pr-8 outline-none focus:border-blue-600/30 focus:ring-8 focus:ring-blue-600/5 transition-all font-medium text-navy-900"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="pt-8">
+                    <button 
+                      disabled={isLoading}
+                      type="submit"
+                      className="w-full py-6 bg-navy-900 text-white rounded-[2rem] font-bold text-[13px] uppercase tracking-widest hover:bg-blue-600 transition-all shadow-2xl shadow-navy-900/10 active:scale-[0.98] flex items-center justify-center gap-4 disabled:opacity-70"
+                    >
+                      {isLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : <>Create Student Account <ArrowRight size={20} /></>}
+                    </button>
+                  </div>
+                </motion.form>
+              ) : (
+                <motion.form 
+                  key="company"
+                  initial={{ opacity: 0, x: 10 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -10 }}
+                  onSubmit={handleCompanySubmit} 
+                  className="space-y-6"
+                >
+                  <div className="space-y-2">
+                    <label className="text-[11px] font-bold uppercase tracking-widest text-navy-900/30 ml-6">Company Name</label>
+                    <div className="relative group/field">
+                      <div className="absolute left-6 top-1/2 -translate-y-1/2 text-navy-900/20 group-focus-within/field:text-blue-600 transition-colors">
+                        <Building2 size={18} />
+                      </div>
+                      <input 
+                        required
+                        type="text"
+                        value={companyData.companyName}
+                        onChange={(e) => setCompanyData({ ...companyData, companyName: e.target.value })}
+                        placeholder="Sonatrach"
+                        className="w-full bg-paper border border-gray-100 rounded-[2rem] py-5 pl-16 pr-8 outline-none focus:border-blue-600/30 focus:ring-8 focus:ring-blue-600/5 transition-all font-medium text-navy-900"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid md:grid-cols-2 gap-6">
+                    <div className="space-y-2">
+                      <label className="text-[11px] font-bold uppercase tracking-widest text-navy-900/30 ml-6">Professional Email</label>
+                      <div className="relative group/field">
+                        <div className="absolute left-6 top-1/2 -translate-y-1/2 text-navy-900/20 group-focus-within/field:text-blue-600 transition-colors">
+                          <Mail size={18} />
+                        </div>
+                        <input 
+                          required
+                          type="email"
+                          value={companyData.email}
+                          onChange={(e) => setCompanyData({ ...companyData, email: e.target.value })}
+                          placeholder="hr@company.dz"
+                          className="w-full bg-paper border border-gray-100 rounded-[2rem] py-5 pl-16 pr-8 outline-none focus:border-blue-600/30 focus:ring-8 focus:ring-blue-600/5 transition-all font-medium text-navy-900"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <label className="text-[11px] font-bold uppercase tracking-widest text-navy-900/30 ml-6">Password</label>
+                      <div className="relative group/field">
+                        <div className="absolute left-6 top-1/2 -translate-y-1/2 text-navy-900/20 group-focus-within/field:text-blue-600 transition-colors">
+                          <Lock size={18} />
+                        </div>
+                        <input 
+                          required
+                          type={showPassword ? "text" : "password"}
+                          value={companyData.password}
+                          onChange={(e) => setCompanyData({ ...companyData, password: e.target.value })}
+                          placeholder="••••••••"
+                          className="w-full bg-paper border border-gray-100 rounded-[2rem] py-5 pl-16 pr-16 outline-none focus:border-blue-600/30 focus:ring-8 focus:ring-blue-600/5 transition-all font-medium text-navy-900"
+                        />
+                        <button 
+                          type="button"
+                          onClick={() => setShowPassword(!showPassword)}
+                          className="absolute right-6 top-1/2 -translate-y-1/2 text-navy-900/20 hover:text-navy-900 transition-colors"
+                        >
+                          {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="grid md:grid-cols-2 gap-6">
+                    <div className="space-y-2">
+                      <label className="text-[11px] font-bold uppercase tracking-widest text-navy-900/30 ml-6">Phone Number</label>
+                      <div className="relative group/field">
+                        <div className="absolute left-6 top-1/2 -translate-y-1/2 text-navy-900/20 group-focus-within/field:text-blue-600 transition-colors">
+                          <Phone size={18} />
+                        </div>
+                        <input 
+                          required
+                          type="tel"
+                          value={companyData.phoneNumber}
+                          onChange={(e) => setCompanyData({ ...companyData, phoneNumber: e.target.value })}
+                          placeholder="021 00 00 00"
+                          className="w-full bg-paper border border-gray-100 rounded-[2rem] py-5 pl-16 pr-8 outline-none focus:border-blue-600/30 focus:ring-8 focus:ring-blue-600/5 transition-all font-medium text-navy-900"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <label className="text-[11px] font-bold uppercase tracking-widest text-navy-900/30 ml-6">Wilaya</label>
+                      <div className="relative group/field">
+                        <div className="absolute left-6 top-1/2 -translate-y-1/2 text-navy-900/20 group-focus-within/field:text-blue-600 transition-colors">
+                          <MapPin size={18} />
+                        </div>
+                        <select 
+                          required
+                          value={companyData.location}
+                          onChange={(e) => setCompanyData({ ...companyData, location: e.target.value })}
+                          className="w-full bg-paper border border-gray-100 rounded-[2rem] py-5 pl-16 pr-12 outline-none focus:border-blue-600/30 focus:ring-8 focus:ring-blue-600/5 transition-all font-medium text-navy-900 appearance-none bg-[url('data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20fill%3D%22none%22%20viewBox%3D%220%200%2020%2020%22%3E%3Cpath%20stroke%3D%22%236B7280%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%20stroke-width%3D%221.5%22%20d%3D%22m6%208%204%204%204-4%22%2F%3E%3C%2Fsvg%3E')] bg-[length:1.5rem_1.5rem] bg-[right_1.25rem_center] bg-no-repeat"
+                        >
+                          <option value="">Select Wilaya</option>
+                          {ALGERIA_WILAYAS.map(w => <option key={w} value={w}>{w}</option>)}
+                        </select>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="text-[11px] font-bold uppercase tracking-widest text-navy-900/30 ml-6">Website</label>
+                    <div className="relative group/field">
+                      <div className="absolute left-6 top-1/2 -translate-y-1/2 text-navy-900/20 group-focus-within/field:text-blue-600 transition-colors">
+                        <Globe size={18} />
+                      </div>
+                      <input 
+                        required
+                        type="url"
+                        value={companyData.website}
+                        onChange={(e) => setCompanyData({ ...companyData, website: e.target.value })}
+                        placeholder="https://company.dz"
+                        className="w-full bg-paper border border-gray-100 rounded-[2rem] py-5 pl-16 pr-8 outline-none focus:border-blue-600/30 focus:ring-8 focus:ring-blue-600/5 transition-all font-medium text-navy-900"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="text-[11px] font-bold uppercase tracking-widest text-navy-900/30 ml-6">
+                      Registre de Commerce (PDF) <span className="text-red-500">*</span>
+                    </label>
+                    <div className="relative group/field">
+                      <div className="absolute left-6 top-1/2 -translate-y-1/2 text-navy-900/20 group-focus-within/field:text-blue-600 transition-colors">
+                        <FileText size={18} />
+                      </div>
+                      <div className="relative">
+                        <input
+                          required
+                          type="file"
+                          accept=".pdf"
+                          onChange={(e) => setCompanyData({...companyData, registreCommerce: e.target.files?.[0] || null})}
+                          className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                        />
+                        <div className="w-full bg-paper border border-gray-100 rounded-[2rem] py-5 pl-16 pr-8 outline-none focus-within:border-blue-600/30 focus-within:ring-8 focus-within:ring-blue-600/5 transition-all font-medium text-navy-900 min-h-[66px] flex items-center">
+                          <span className={`block truncate ${!companyData.registreCommerce ? 'text-navy-900/20' : 'text-navy-900'}`}>
+                            {companyData.registreCommerce ? companyData.registreCommerce.name : "Upload PDF Document"}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="text-[11px] font-bold uppercase tracking-widest text-navy-900/30 ml-6">Description</label>
+                    <div className="relative group/field">
+                      <div className="absolute left-6 top-6 text-navy-900/20 group-focus-within/field:text-blue-600 transition-colors">
+                        <FileText size={18} />
+                      </div>
+                      <textarea 
+                        required
+                        value={companyData.description}
+                        onChange={(e) => setCompanyData({ ...companyData, description: e.target.value })}
+                        placeholder="Brief overview of your company and internship opportunities..."
+                        rows={4}
+                        className="w-full bg-paper border border-gray-100 rounded-[3rem] py-5 pl-16 pr-8 outline-none focus:border-blue-600/30 focus:ring-8 focus:ring-blue-600/5 transition-all font-medium text-navy-900 resize-none"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="pt-8">
+                    <button 
+                      disabled={isLoading}
+                      type="submit"
+                      className="w-full py-6 bg-navy-900 text-white rounded-[2rem] font-bold text-[13px] uppercase tracking-widest hover:bg-blue-600 transition-all shadow-2xl shadow-navy-900/10 active:scale-[0.98] flex items-center justify-center gap-4 disabled:opacity-70"
+                    >
+                      {isLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : <>Register Company <ArrowRight size={20} /></>}
+                    </button>
+                  </div>
+                </motion.form>
+              )}
+            </AnimatePresence>
+          </div>
+        </motion.div>
+      </main>
     </div>
   );
 };

@@ -19,34 +19,51 @@ import {
   AlertCircle
 } from 'lucide-react';
 import { useNavigate, Link } from 'react-router-dom';
-import axios from 'axios';
+import api from '@/api';
 import { toast, Toaster } from 'sonner';
 
 interface Application {
   id: number;
   offerTitle: string;
   company: string;
-  status: 'PENDING' | 'ACCEPTED' | 'REFUSED' | 'VALIDATED';
+  status: 'PENDING' | 'ACCEPTED' | 'REFUSED' | 'VALIDATED' | 'ONGOING' | 'PENDING_CERT' | 'COMPLETED';
   matchingScore: number;
   appliedAt: string;
   pdfUrl?: string;
+  certificateUrl?: string;
   refusalReason?: string;
 }
 
+import StudentSidebar from './StudentSidebar';
+import StudentHeader from './StudentHeader';
+
 const MyApplications = () => {
   const navigate = useNavigate();
+  const [profile, setProfile] = useState<{ firstName: string; lastName: string; photoUrl?: string } | null>(null);
   const [applications, setApplications] = useState<Application[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('ALL');
 
   useEffect(() => {
+    const fetchProfile = async () => {
+      try {
+        const res = await api.get('/api/student/profile/');
+        const pData = res.data;
+        setProfile({
+          firstName: pData.firstName || pData.first_name,
+          lastName: pData.lastName || pData.last_name,
+          photoUrl: pData.profile_photo || pData.profilePhoto || pData.photoUrl || pData.photo_url || pData.photo || ''
+        });
+      } catch (err) {
+        console.error('Error fetching profile in applications:', err);
+      }
+    };
+
     const fetchApplications = async () => {
       setIsLoading(true);
-      const token = localStorage.getItem('access_token');
-      const headers = { Authorization: `Bearer ${token}` };
       
       try {
-        const response = await axios.get('/api/student/applications/', { headers });
+        const response = await api.get('/api/student/my-applications/');
         const data = Array.isArray(response.data) ? response.data : (response.data?.applications || []);
         
         // Map data to handle snake_case from Django
@@ -58,6 +75,7 @@ const MyApplications = () => {
           company: a.company_name || a.companyName || a.company || '',
           appliedAt: a.applied_date || a.appliedDate || a.application_date || a.created_at || '',
           pdfUrl: a.pdf_url || a.pdfUrl,
+          certificateUrl: a.certificate_url || a.certificateUrl || a.pdfCertificate,
           refusalReason: a.refusal_reason || a.refusalReason
         }));
 
@@ -70,6 +88,7 @@ const MyApplications = () => {
       }
     };
 
+    fetchProfile();
     fetchApplications();
   }, []);
 
@@ -87,9 +106,8 @@ const MyApplications = () => {
   const stats = {
     total: applications.length,
     pending: applications.filter(a => a.status === 'PENDING').length,
-    accepted: applications.filter(a => a.status === 'ACCEPTED').length,
-    refused: applications.filter(a => a.status === 'REFUSED').length,
-    validated: applications.filter(a => a.status === 'VALIDATED').length
+    accepted: applications.filter(a => a.status === 'ACCEPTED' || a.status === 'VALIDATED').length,
+    refused: applications.filter(a => a.status === 'REFUSED').length
   };
 
   const getStatusStyles = (status: string) => {
@@ -98,92 +116,28 @@ const MyApplications = () => {
       case 'ACCEPTED': return 'bg-green-50 text-green-600 border-green-100';
       case 'REFUSED': return 'bg-red-50 text-red-500 border-red-100';
       case 'VALIDATED': return 'bg-blue-50 text-blue-600 border-blue-100';
+      case 'ONGOING': return 'bg-emerald-50 text-emerald-600 border-emerald-100';
+      case 'PENDING_CERT': return 'bg-amber-50 text-amber-600 border-amber-100';
+      case 'COMPLETED': return 'bg-purple-50 text-purple-600 border-purple-100';
       default: return 'bg-gray-50 text-gray-600 border-gray-100';
     }
   };
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC] flex font-sans text-navy-900 selection:bg-blue-600/10 selection:text-blue-600">
+    <div className="min-h-screen bg-[#F8FAFC] flex font-sans text-black selection:bg-blue-600/10 selection:text-blue-600">
       <Toaster position="top-right" richColors />
       
       {/* Sidebar */}
-      <aside className="fixed left-0 top-0 bottom-0 w-72 bg-[#060D1F] text-white flex flex-col z-50 border-r border-white/5">
-        <div className="p-10">
-          <Link to="/" className="flex items-center gap-2.5 group">
-            <div className="w-3 h-3 rounded-full bg-blue-600 group-hover:scale-125 transition-transform duration-500"></div>
-            <span className="font-bold text-2xl tracking-tighter">Stag<span className="text-blue-600">.io</span></span>
-          </Link>
-        </div>
-
-        <nav className="flex-1 px-6 space-y-1.5">
-          <div className="pb-4 px-4">
-            <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-white/20">Main Menu</p>
-          </div>
-          
-          <Link to="/student/dashboard" className="flex items-center gap-4 px-4 py-3.5 text-white/40 hover:text-white hover:bg-white/5 rounded-2xl text-[13px] font-bold tracking-wide transition-all group">
-            <LayoutDashboard size={18} className="group-hover:scale-110 transition-transform" />
-            Dashboard
-          </Link>
-          <Link to="/student/offers" className="flex items-center gap-4 px-4 py-3.5 text-white/40 hover:text-white hover:bg-white/5 rounded-2xl text-[13px] font-bold tracking-wide transition-all group">
-            <Search size={18} className="group-hover:scale-110 transition-transform" />
-            Search Offers
-          </Link>
-          <Link to="/student/applications" className="flex items-center gap-4 px-4 py-3.5 bg-blue-600 rounded-2xl text-[13px] font-bold tracking-wide transition-all shadow-lg shadow-blue-600/20 group">
-            <ClipboardList size={18} className="group-hover:scale-110 transition-transform" />
-            My Applications
-          </Link>
-          
-          <div className="pt-8 pb-4 px-4">
-            <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-white/20">Quick Actions</p>
-          </div>
-          
-          <button 
-            onClick={() => navigate('/student/offers')}
-            className="w-full flex items-center gap-4 px-4 py-3 text-white/40 hover:text-white hover:bg-white/5 rounded-2xl text-[13px] font-bold tracking-wide transition-all group"
-          >
-            <div className="w-8 h-8 rounded-xl bg-white/5 flex items-center justify-center group-hover:bg-blue-600/20 group-hover:text-blue-400 transition-all">
-              <Plus size={16} />
-            </div>
-            New Search
-          </button>
-          
-          <div className="pt-8 pb-4 px-4">
-            <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-white/20">Account</p>
-          </div>
-          
-          <Link to="/student/profile" className="flex items-center gap-4 px-4 py-3.5 text-white/40 hover:text-white hover:bg-white/5 rounded-2xl text-[13px] font-bold tracking-wide transition-all group">
-            <User size={18} className="group-hover:scale-110 transition-transform" />
-            My Profile
-          </Link>
-        </nav>
-
-        <div className="p-8 border-t border-white/5">
-          <button 
-            onClick={handleSignOut}
-            className="w-full flex items-center justify-center gap-3 py-3.5 bg-white/5 hover:bg-red-500/10 hover:text-red-500 rounded-2xl text-[10px] font-bold uppercase tracking-widest transition-all border border-white/5"
-          >
-            <LogOut size={16} />
-            Sign Out
-          </button>
-        </div>
-      </aside>
+      <StudentSidebar />
 
       {/* Main Content */}
       <main className="flex-1 ml-72 min-h-screen">
-        {/* Top Bar */}
-        <header className="h-24 bg-white/80 backdrop-blur-xl border-b border-gray-100 flex items-center justify-between px-12 sticky top-0 z-40">
-          <div>
-            <h2 className="text-2xl font-display font-bold text-navy-900 tracking-tight">My Applications</h2>
-            <p className="text-[11px] font-bold uppercase tracking-widest text-navy-900/30 mt-1">Track your internship journey</p>
-          </div>
-          
-          <div className="flex items-center gap-6">
-            <button className="relative p-3 bg-paper rounded-2xl text-navy-900/40 hover:text-blue-600 hover:bg-blue-50 transition-all border border-gray-100">
-              <Bell size={20} />
-              <span className="absolute top-2.5 right-2.5 w-2.5 h-2.5 bg-blue-600 rounded-full border-2 border-white" />
-            </button>
-          </div>
-        </header>
+        {/* Header */}
+        <StudentHeader 
+          title="My Applications" 
+          subtitle="Keep track of your internship journey"
+          profile={profile}
+        />
 
         <div className="p-12 space-y-10 max-w-7xl mx-auto">
           {/* Stats Row */}
@@ -205,26 +159,26 @@ const MyApplications = () => {
                   {stat.icon}
                 </div>
                 <div>
-                  <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-navy-900/30 mb-2">{stat.label}</p>
-                  <h4 className="text-3xl font-display font-bold text-navy-900 tracking-tighter">{stat.value}</h4>
+                  <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-black/30 mb-2">{stat.label}</p>
+                  <h4 className="text-3xl font-display font-bold text-black tracking-tighter">{stat.value}</h4>
                 </div>
               </motion.div>
             ))}
           </div>
 
           {/* Filter Tabs */}
-          <div className="flex items-center gap-2 p-1.5 bg-paper rounded-2xl w-fit border border-gray-100">
-            {['ALL', 'PENDING', 'ACCEPTED', 'REFUSED', 'VALIDATED'].map(tab => (
+          <div className="flex items-center gap-2 p-1.5 bg-paper rounded-2xl w-fit border border-gray-100 overflow-x-auto">
+            {['ALL', 'PENDING', 'ACCEPTED', 'VALIDATED', 'ONGOING', 'PENDING_CERT', 'COMPLETED', 'REFUSED'].map(tab => (
               <button
                 key={tab}
                 onClick={() => setActiveTab(tab)}
-                className={`px-6 py-2.5 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all ${
+                className={`px-6 py-2.5 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all whitespace-nowrap ${
                   activeTab === tab 
                     ? 'bg-white text-blue-600 shadow-sm' 
                     : 'text-navy-900/40 hover:text-navy-900'
                 }`}
               >
-                {tab}
+                {tab.replace('_', ' ')}
               </button>
             ))}
           </div>
@@ -297,6 +251,18 @@ const MyApplications = () => {
                           title="Download Agreement"
                         >
                           <Download size={18} />
+                        </a>
+                      )}
+
+                      {app.status === 'COMPLETED' && app.certificateUrl && (
+                        <a 
+                          href={app.certificateUrl} 
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                          className="px-6 py-3 bg-navy-900 text-white rounded-2xl text-[10px] font-bold uppercase tracking-widest hover:bg-blue-600 transition-all flex items-center gap-3 shadow-lg shadow-navy-900/10"
+                        >
+                          <Download size={14} />
+                          Download Certificate
                         </a>
                       )}
 

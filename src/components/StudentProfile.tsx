@@ -19,10 +19,11 @@ import {
   X,
   GraduationCap,
   CreditCard,
-  Lock
+  Lock,
+  CheckCircle2
 } from 'lucide-react';
 import { useNavigate, Link } from 'react-router-dom';
-import axios from 'axios';
+import api from '@/api';
 import { toast, Toaster } from 'sonner';
 import { ALGERIA_WILAYAS } from '../constants';
 
@@ -42,6 +43,9 @@ interface StudentProfileData {
   cvUrl?: string;
   completionPercentage: number;
 }
+
+import StudentSidebar from './StudentSidebar';
+import StudentHeader from './StudentHeader';
 
 const calculateCompletion = (p: any) => {
   const fields = [
@@ -67,7 +71,10 @@ const normalizeProfile = (pData: any): StudentProfileData => {
     ...pData,
     phoneNumber: pData.phoneNumber || pData.phone_number || '',
     universityWilaya: pData.univWillaya || pData.univ_willaya || pData.universityWilaya || '',
-    department: pData.department || '',
+    department: (typeof pData.department === 'object' ? pData.department?.name : pData.department) || '',
+    departmentId: pData.department?.id || (typeof pData.department !== 'object' ? pData.department : ''),
+    departmentName: pData.department?.name || (typeof pData.department === 'string' ? pData.department : ''),
+    universityName: (typeof pData.university === 'object' ? pData.university?.name : (typeof pData.university === 'string' ? pData.university : '')) || pData.university_name || pData.department?.faculty?.university?.name || '',
     socialSecurityNumber: pData.socialSecurityNumber || pData.social_security_number || '',
     idCardNumber: pData.IDCardNumber || pData.id_card_number || pData.idCardNumber || '',
     githubLink: pData.githubLink || pData.github_link || '',
@@ -92,39 +99,94 @@ const StudentProfile = () => {
   const [selectedSkills, setSelectedSkills] = useState<number[]>([]);
   const [formData, setFormData] = useState({
     phoneNumber: '',
-    universityWilaya: '',
     githubLink: '',
     portfolioLink: ''
   });
+  const [universities, setUniversities] = useState<any[]>([]);
+  const [faculties, setFaculties] = useState<any[]>([]);
+  const [departments, setDepartments] = useState<any[]>([]);
+  const [selectedUniv, setSelectedUniv] = useState<string | number>('');
+  const [selectedFaculty, setSelectedFaculty] = useState<string | number>('');
+  const [selectedDept, setSelectedDept] = useState<string | number>('');
+
+  useEffect(() => {
+    const fetchUniversities = async () => {
+      try {
+        const res = await api.get('/api/universities/');
+        setUniversities(res.data.results || res.data || []);
+      } catch (err) {
+        console.error('Error fetching universities:', err);
+      }
+    };
+    fetchUniversities();
+  }, []);
+
+  useEffect(() => {
+    if (selectedUniv) {
+      const fetchFaculties = async () => {
+        try {
+          const res = await api.get(`/api/faculties/${selectedUniv}/`);
+          setFaculties(res.data.results || res.data || []);
+          setDepartments([]);
+        } catch (err) {
+          console.error('Error fetching faculties:', err);
+        }
+      };
+      fetchFaculties();
+    } else {
+      setFaculties([]);
+      setDepartments([]);
+    }
+  }, [selectedUniv]);
+
+  useEffect(() => {
+    if (selectedFaculty) {
+      const fetchDepartments = async () => {
+        try {
+          const res = await api.get(`/api/departments/${selectedFaculty}/`);
+          setDepartments(res.data.results || res.data || []);
+        } catch (err) {
+          console.error('Error fetching departments:', err);
+        }
+      };
+      fetchDepartments();
+    } else {
+      setDepartments([]);
+    }
+  }, [selectedFaculty]);
 
   useEffect(() => {
     const fetchData = async () => {
       setIsLoading(true);
-      const token = localStorage.getItem('access_token');
-      if (!token) {
-        navigate('/login');
-        return;
-      }
-      const headers = { Authorization: `Bearer ${token}` };
       
       try {
         const [profileRes, skillsRes] = await Promise.all([
-          axios.get('/api/student/profile/', { headers }),
-          axios.get('/api/skills/', { headers })
+          api.get('/api/student/profile/'),
+          api.get('/api/skills/')
         ]);
         
         const pData = profileRes.data;
-        
-        // Normalize profile mapping
         const normalizedProfile = normalizeProfile(pData);
         
         setProfile(normalizedProfile);
         setFormData({
           phoneNumber: normalizedProfile.phoneNumber,
-          universityWilaya: normalizedProfile.universityWilaya,
           githubLink: normalizedProfile.githubLink,
           portfolioLink: normalizedProfile.portfolioLink
         });
+        
+        // Handle department object or ID
+        if (pData.department) {
+          const dept = pData.department;
+          setSelectedDept(dept.id || dept);
+          if (dept.faculty) {
+            setSelectedFaculty(dept.faculty.id || dept.faculty);
+            if (dept.faculty.university) {
+              setSelectedUniv(dept.faculty.university.id || dept.faculty.university);
+            }
+          }
+        }
+
         setSelectedSkills(Array.isArray(pData.skills) ? pData.skills.map((s: any) => typeof s === 'object' ? s.id : s) : []);
         setAllSkills(Array.isArray(skillsRes.data) ? skillsRes.data : (skillsRes.data?.skills || []));
       } catch (err) {
@@ -140,20 +202,28 @@ const StudentProfile = () => {
 
   const handleSave = async () => {
     setIsSaving(true);
-    const token = localStorage.getItem('access_token');
-    const headers = { Authorization: `Bearer ${token}` };
     
     try {
-      await axios.put('/api/student/update/', {
+      const payload = {
         phoneNumber: formData.phoneNumber,
-        univWillaya: formData.universityWilaya,
+        univWillaya: profile?.universityWilaya,
+        university_wilaya: profile?.universityWilaya,
+        univ_willaya: profile?.universityWilaya,
         githubLink: formData.githubLink,
         portfolioLink: formData.portfolioLink,
-        skills: selectedSkills
-      }, { headers });
+        skills: selectedSkills,
+        university: selectedUniv, // primary key ID
+        faculty: selectedFaculty,   // primary key ID
+        department: selectedDept,   // primary key ID
+        socialSecurityNumber: profile?.socialSecurityNumber,
+        social_security_number: profile?.socialSecurityNumber,
+        IDCardNumber: profile?.idCardNumber,
+        id_card_number: profile?.idCardNumber,
+        idCardNumber: profile?.idCardNumber
+      };
+      await api.put('/api/student/update/', payload);
       toast.success('Profile updated successfully!');
-      // Refresh profile to get new completion percentage
-      const profileRes = await axios.get('/api/student/profile/', { headers });
+      const profileRes = await api.get('/api/student/profile/');
       setProfile(normalizeProfile(profileRes.data));
     } catch (err) {
       console.error('Error updating profile:', err);
@@ -169,11 +239,9 @@ const StudentProfile = () => {
     const photoFormData = new FormData();
     photoFormData.append('photo', file);
     
-    const token = localStorage.getItem('access_token');
     try {
-      await axios.post('/api/student/profile/photo/', photoFormData, {
+      await api.post('/api/student/profile/photo/', photoFormData, {
         headers: { 
-          Authorization: `Bearer ${token}`,
           'Content-Type': 'multipart/form-data'
         }
       });
@@ -190,19 +258,15 @@ const StudentProfile = () => {
     const cvFormData = new FormData();
     cvFormData.append('cv', file);
     
-    const token = localStorage.getItem('access_token');
     try {
-      await axios.post('/api/student/cv/upload/', cvFormData, {
+      await api.post('/api/student/cv/upload/', cvFormData, {
         headers: { 
-          Authorization: `Bearer ${token}`,
           'Content-Type': 'multipart/form-data'
         }
       });
       toast.success('CV uploaded successfully!');
       // Refresh profile to show new CV link
-      const profileRes = await axios.get('/api/student/profile/', {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      const profileRes = await api.get('/api/student/profile/');
       setProfile(normalizeProfile(profileRes.data));
     } catch (err) {
       toast.error('Failed to upload CV.');
@@ -230,88 +294,25 @@ const StudentProfile = () => {
     );
   }
 
+  // Read-Only Display: Institutional fields should be locked once they have values.
+  const isInstitutionalVerified = !!(profile?.department || profile?.department);
+  const isIdentityVerified = !!(profile?.socialSecurityNumber || profile?.idCardNumber);
+
   return (
     <div className="min-h-screen bg-[#F8FAFC] flex font-sans text-black selection:bg-blue-600/10 selection:text-blue-600">
       <Toaster position="top-right" richColors />
       
       {/* Sidebar */}
-      <aside className="fixed left-0 top-0 bottom-0 w-72 bg-[#060D1F] text-white flex flex-col z-50 border-r border-white/5">
-        <div className="p-10">
-          <Link to="/" className="flex items-center gap-2.5 group">
-            <div className="w-3 h-3 rounded-full bg-blue-600 group-hover:scale-125 transition-transform duration-500"></div>
-            <span className="font-bold text-2xl tracking-tighter">Stag<span className="text-blue-600">.io</span></span>
-          </Link>
-        </div>
-
-        <nav className="flex-1 px-6 space-y-1.5">
-          <div className="pb-4 px-4">
-            <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-white/20">Main Menu</p>
-          </div>
-          
-          <Link to="/student/dashboard" className="flex items-center gap-4 px-4 py-3.5 text-white/40 hover:text-white hover:bg-white/5 rounded-2xl text-[13px] font-bold tracking-wide transition-all group">
-            <LayoutDashboard size={18} className="group-hover:scale-110 transition-transform" />
-            Dashboard
-          </Link>
-          <Link to="/student/offers" className="flex items-center gap-4 px-4 py-3.5 text-white/40 hover:text-white hover:bg-white/5 rounded-2xl text-[13px] font-bold tracking-wide transition-all group">
-            <Search size={18} className="group-hover:scale-110 transition-transform" />
-            Search Offers
-          </Link>
-          <Link to="/student/applications" className="flex items-center gap-4 px-4 py-3.5 text-white/40 hover:text-white hover:bg-white/5 rounded-2xl text-[13px] font-bold tracking-wide transition-all group">
-            <ClipboardList size={18} className="group-hover:scale-110 transition-transform" />
-            My Applications
-          </Link>
-          
-          <div className="pt-8 pb-4 px-4">
-            <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-white/20">Quick Actions</p>
-          </div>
-          
-          <button 
-            onClick={() => navigate('/student/offers')}
-            className="w-full flex items-center gap-4 px-4 py-3 text-white/40 hover:text-white hover:bg-white/5 rounded-2xl text-[13px] font-bold tracking-wide transition-all group"
-          >
-            <div className="w-8 h-8 rounded-xl bg-white/5 flex items-center justify-center group-hover:bg-blue-600/20 group-hover:text-blue-400 transition-all">
-              <Plus size={16} />
-            </div>
-            New Search
-          </button>
-          
-          <div className="pt-8 pb-4 px-4">
-            <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-white/20">Account</p>
-          </div>
-          
-          <Link to="/student/profile" className="flex items-center gap-4 px-4 py-3.5 bg-blue-600 rounded-2xl text-[13px] font-bold tracking-wide transition-all shadow-lg shadow-blue-600/20 group">
-            <User size={18} className="group-hover:scale-110 transition-transform" />
-            My Profile
-          </Link>
-        </nav>
-
-        <div className="p-8 border-t border-white/5">
-          <button 
-            onClick={handleSignOut}
-            className="w-full flex items-center justify-center gap-3 py-3.5 bg-white/5 hover:bg-red-500/10 hover:text-red-500 rounded-2xl text-[10px] font-bold uppercase tracking-widest transition-all border border-white/5"
-          >
-            <LogOut size={16} />
-            Sign Out
-          </button>
-        </div>
-      </aside>
+      <StudentSidebar />
 
       {/* Main Content */}
       <main className="flex-1 ml-72 min-h-screen">
-        {/* Top Bar */}
-        <header className="h-24 bg-white/80 backdrop-blur-xl border-b border-gray-100 flex items-center justify-between px-12 sticky top-0 z-40">
-          <div>
-            <h2 className="text-2xl font-display font-bold text-black tracking-tight">My Profile</h2>
-            <p className="text-[11px] font-bold uppercase tracking-widest text-black/30 mt-1">Manage your professional identity</p>
-          </div>
-          
-          <div className="flex items-center gap-6">
-            <button className="relative p-3 bg-paper rounded-2xl text-black/40 hover:text-blue-600 hover:bg-blue-50 transition-all border border-gray-100">
-              <Bell size={20} />
-              <span className="absolute top-2.5 right-2.5 w-2.5 h-2.5 bg-blue-600 rounded-full border-2 border-white" />
-            </button>
-          </div>
-        </header>
+        {/* Header */}
+        <StudentHeader 
+          title="My Profile" 
+          subtitle="Manage your professional identity"
+          profile={profile}
+        />
 
         <div className="p-12 space-y-12 max-w-5xl mx-auto">
           {/* Top Section */}
@@ -335,7 +336,15 @@ const StudentProfile = () => {
             <div className="flex-1 space-y-4">
               <div>
                 <h1 className="text-3xl font-display font-bold text-black tracking-tight">{profile?.firstName} {profile?.lastName}</h1>
-                <p className="text-black/40 font-bold uppercase tracking-widest text-[11px] mt-1">{profile?.email}</p>
+                <div className="flex items-center gap-3 mt-1">
+                  <p className="text-black/40 font-bold uppercase tracking-widest text-[11px]">{profile?.email}</p>
+                  {isInstitutionalVerified && (
+                    <div className="flex items-center gap-1.5 px-2 py-0.5 bg-blue-50 text-blue-600 rounded-lg text-[9px] font-bold uppercase tracking-widest border border-blue-100/50">
+                      <CheckCircle2 size={10} />
+                      Verified Student
+                    </div>
+                  )}
+                </div>
               </div>
 
               <div className="space-y-2">
@@ -396,44 +405,67 @@ const StudentProfile = () => {
                 </div>
 
                 <div className="space-y-2">
-                  <label className="text-[10px] font-bold uppercase tracking-widest text-black/30 ml-4">University Wilaya</label>
+                  <label className="text-[10px] font-bold uppercase tracking-widest text-black/30 ml-4">University</label>
                   <div className="relative group">
-                    <div className="absolute left-5 top-1/2 -translate-y-1/2 text-black/30 group-focus-within:text-blue-600 transition-colors">
-                      <MapPin size={16} />
+                    <div className={`absolute left-5 top-1/2 -translate-y-1/2 transition-colors ${isInstitutionalVerified ? 'text-blue-600/30' : 'text-black/30 group-focus-within:text-blue-600'}`}>
+                      <GraduationCap size={18} />
                     </div>
-                    <select 
-                      value={formData.universityWilaya}
-                      onChange={(e) => setFormData({...formData, universityWilaya: e.target.value})}
-                      className="w-full bg-paper border border-gray-100 rounded-2xl py-4 pl-14 pr-6 outline-none focus:border-blue-600/30 focus:ring-4 focus:ring-blue-600/5 transition-all font-medium text-black appearance-none cursor-pointer"
-                    >
-                      <option value="">Select Wilaya</option>
-                      {ALGERIA_WILAYAS.map(w => <option key={w} value={w}>{w}</option>)}
-                    </select>
+                    {isInstitutionalVerified ? (
+                      <div className="w-full bg-blue-50/40 border border-blue-600/10 rounded-2xl py-4 pl-14 pr-12 font-bold text-black cursor-not-allowed select-none relative group">
+                        {(profile as any).universityName || 'University Locked'}
+                        <Lock size={14} className="absolute right-5 top-1/2 -translate-y-1/2 opacity-20" />
+                      </div>
+                    ) : (
+                      <select 
+                        value={selectedUniv}
+                        onChange={(e) => {
+                          setSelectedUniv(e.target.value);
+                          setSelectedFaculty('');
+                          setSelectedDept('');
+                        }}
+                        className="w-full bg-paper border border-gray-100 rounded-2xl py-4 pl-14 pr-6 outline-none focus:border-blue-600/30 focus:ring-4 focus:ring-blue-600/5 transition-all font-medium text-black appearance-none cursor-pointer"
+                      >
+                        <option value="">Select University</option>
+                        {universities.map(u => <option key={u.id} value={u.id}>{u.name}</option>)}
+                      </select>
+                    )}
                   </div>
                 </div>
 
-                {/* --- READ-ONLY DEPARTMENT --- */}
                 <div className="space-y-2">
                   <label className="text-[10px] font-bold uppercase tracking-widest text-black/30 ml-4">Department</label>
                   <div className="relative group">
-                    <div className="absolute left-5 top-1/2 -translate-y-1/2 text-blue-600/30">
-                      <Lock size={16} />
+                    <div className={`absolute left-5 top-1/2 -translate-y-1/2 transition-colors ${isInstitutionalVerified ? 'text-blue-600/30' : 'text-black/30 group-focus-within:text-blue-600'}`}>
+                      <ClipboardList size={18} />
                     </div>
-                    <div className="w-full bg-blue-50/40 border border-blue-600/10 rounded-2xl py-4 pl-14 pr-6 font-bold text-black cursor-not-allowed select-none">
-                      {profile?.department || 'Not Assigned'}
-                    </div>
+                    {isInstitutionalVerified ? (
+                      <div className="w-full bg-blue-50/40 border border-blue-600/10 rounded-2xl py-4 pl-14 pr-12 font-bold text-black cursor-not-allowed select-none relative group">
+                        {(profile as any).departmentName || (profile as any).department || 'Department Locked'}
+                        <Lock size={14} className="absolute right-5 top-1/2 -translate-y-1/2 opacity-20" />
+                      </div>
+                    ) : (
+                      <select 
+                        value={selectedDept}
+                        onChange={(e) => setSelectedDept(e.target.value)}
+                        className="w-full bg-paper border border-gray-100 rounded-2xl py-4 pl-14 pr-6 outline-none focus:border-blue-600/30 focus:ring-4 focus:ring-blue-600/5 transition-all font-medium text-black appearance-none cursor-pointer"
+                      >
+                        <option value="">Select Department</option>
+                        {departments.map(d => <option key={d.id} value={d.id}>{d.name}</option>)}
+                      </select>
+                    )}
                   </div>
                 </div>
 
-                {/* --- READ-ONLY SOCIAL SECURITY --- */}
+                {/* --- READ-ONLY SOCIAL SECURITY NUMBER --- */}
                 <div className="space-y-2">
                   <label className="text-[10px] font-bold uppercase tracking-widest text-black/30 ml-4">Social Security Number</label>
                   <div className="relative group">
-                    <div className="absolute left-5 top-1/2 -translate-y-1/2 text-blue-600/30">
+                    <div className="absolute left-5 top-1/2 -translate-y-1/2 text-blue-600/30 group-focus-within:text-blue-600 transition-colors">
                       <Lock size={16} />
                     </div>
-                    <div className="w-full bg-blue-50/40 border border-blue-600/10 rounded-2xl py-4 pl-14 pr-6 font-bold text-black cursor-not-allowed select-none tracking-widest">
-                      {profile?.socialSecurityNumber || 'Not Verified'}
+                    <div className="w-full bg-blue-50/40 border border-blue-600/10 rounded-2xl py-4 pl-14 pr-12 font-bold text-black cursor-not-allowed select-none tracking-widest relative">
+                      {profile?.socialSecurityNumber || 'Not Provided'}
+                      <Lock size={14} className="absolute right-5 top-1/2 -translate-y-1/2 opacity-20" />
                     </div>
                   </div>
                 </div>
@@ -442,11 +474,12 @@ const StudentProfile = () => {
                 <div className="space-y-2">
                   <label className="text-[10px] font-bold uppercase tracking-widest text-black/30 ml-4">ID Card Number</label>
                   <div className="relative group">
-                    <div className="absolute left-5 top-1/2 -translate-y-1/2 text-blue-600/30">
-                      <Lock size={16} />
+                    <div className="absolute left-5 top-1/2 -translate-y-1/2 text-blue-600/30 group-focus-within:text-blue-600 transition-colors">
+                      <CreditCard size={16} />
                     </div>
-                    <div className="w-full bg-blue-50/40 border border-blue-600/10 rounded-2xl py-4 pl-14 pr-6 font-bold text-black cursor-not-allowed select-none">
-                      {profile?.idCardNumber || 'Not Verified'}
+                    <div className="w-full bg-blue-50/40 border border-blue-600/10 rounded-2xl py-4 pl-14 pr-12 font-bold text-black cursor-not-allowed select-none relative">
+                      {profile?.idCardNumber || 'Not Provided'}
+                      <Lock size={14} className="absolute right-5 top-1/2 -translate-y-1/2 opacity-20" />
                     </div>
                   </div>
                 </div>

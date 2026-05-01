@@ -18,7 +18,7 @@ import {
   Loader2,
 } from 'lucide-react';
 import { useNavigate, Link } from 'react-router-dom';
-import axios from 'axios';
+import api from '@/api';
 import { toast, Toaster } from 'sonner';
 
 interface Stats {
@@ -93,11 +93,8 @@ const AdminStatistics = () => {
   useEffect(() => {
     const fetchStats = async () => {
       setIsLoading(true);
-      const token = localStorage.getItem('access_token');
       try {
-        const res = await axios.get('/api/admin/statistics/', {
-          headers: { Authorization: `Bearer ${token}` },
-        });
+        const res = await api.get('/api/admin/statistics/');
         setStats(res.data);
       } catch {
         toast.error('Failed to load statistics.');

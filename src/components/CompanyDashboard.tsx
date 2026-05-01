@@ -20,10 +20,11 @@ import {
   ArrowRight,
   Github,
   Globe,
-  FileText
+  FileText,
+  Calendar
 } from 'lucide-react';
 import { useNavigate, Link } from 'react-router-dom';
-import axios from 'axios';
+import api from '@/api';
 import { toast, Toaster } from 'sonner';
 
 interface CompanyProfile {
@@ -56,11 +57,23 @@ interface CompanyOffer {
   deadline: string;
 }
 
+interface ActiveIntern {
+  id: number;
+  studentName: string;
+  studentEmail: string;
+  studentPhoto?: string;
+  offerTitle: string;
+  startDate: string;
+  endDate: string;
+  status: string;
+}
+
 const CompanyDashboard = () => {
   const navigate = useNavigate();
   const [profile, setProfile] = useState<CompanyProfile | null>(null);
   const [applications, setApplications] = useState<Application[]>([]);
   const [offers, setOffers] = useState<CompanyOffer[]>([]);
+  const [activeInterns, setActiveInterns] = useState<ActiveIntern[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isActionLoading, setIsActionLoading] = useState<number | null>(null);
   const [reviewModal, setReviewModal] = useState<{ isOpen: boolean; app: Application | null }>({
@@ -82,13 +95,12 @@ const CompanyDashboard = () => {
 
     const fetchData = async () => {
       setIsLoading(true);
-      const headers = { Authorization: `Bearer ${token}` };
 
       try {
         const [profileRes, appsRes, offersRes] = await Promise.allSettled([
-          axios.get('/api/company/profile/', { headers }),
-          axios.get('/api/company/applications/', { headers }),
-          axios.get('/api/offers/', { headers })
+          api.get('/api/company/profile/'),
+          api.get('/api/company/applications/'),
+          api.get('/api/offers/')
         ]);
 
         if (profileRes.status === 'fulfilled') setProfile(profileRes.value.data);
@@ -115,6 +127,21 @@ const CompanyDashboard = () => {
           setOffers(data.slice(0, 3));
         }
 
+        const internsRes = await api.get('/api/company/active-interns/');
+        if (internsRes.status === 200) {
+          const data = Array.isArray(internsRes.data) ? internsRes.data : (internsRes.data?.interns || []);
+          setActiveInterns(data.map((i: any) => ({
+            id: i.id,
+            studentName: `${i.student?.firstName || i.student?.first_name || ''} ${i.student?.lastName || i.student?.last_name || ''}`,
+            studentEmail: i.student?.email || '',
+            studentPhoto: i.student?.profile_photo || i.student?.photo || '',
+            offerTitle: i.offer?.title || '',
+            startDate: i.start_date || i.startDate || '',
+            endDate: i.end_date || i.endDate || '',
+            status: i.status
+          })));
+        }
+
       } catch (err) {
         console.error('Error fetching dashboard data:', err);
         toast.error('Failed to load dashboard data. Please check your connection.');
@@ -128,11 +155,8 @@ const CompanyDashboard = () => {
 
   const handleAccept = async (id: number) => {
     setIsActionLoading(id);
-    const token = localStorage.getItem('access_token');
     try {
-      await axios.put(`/api/company/applications/${id}/accept/`, {}, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      await api.put(`/api/company/applications/${id}/accept/`, {});
       toast.success('Application accepted successfully!');
       setApplications(prev => prev.map(app => app.id === id ? { ...app, status: 'ACCEPTED' } : app));
     } catch (err: any) {
@@ -146,17 +170,27 @@ const CompanyDashboard = () => {
     if (!refuseModal.appId) return;
     const id = refuseModal.appId;
     setIsActionLoading(id);
-    const token = localStorage.getItem('access_token');
     try {
-      await axios.put(`/api/company/applications/${id}/refuse/`, { reason: refuseReason }, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      await api.put(`/api/company/applications/${id}/refuse/`, { reason: refuseReason });
       toast.success('Application refused.');
       setApplications(prev => prev.map(app => app.id === id ? { ...app, status: 'REFUSED' } : app));
       setRefuseModal({ isOpen: false, appId: null });
       setRefuseReason('');
     } catch (err: any) {
       toast.error('Failed to refuse application.');
+    } finally {
+      setIsActionLoading(null);
+    }
+  };
+
+  const handleMarkFinished = async (internshipId: number) => {
+    setIsActionLoading(internshipId);
+    try {
+      await api.post(`/api/company/internships/${internshipId}/mark-ended/`, {});
+      toast.success('Internship marked as finished!');
+      setActiveInterns(prev => prev.filter(i => i.id !== internshipId));
+    } catch (err) {
+      toast.error('Failed to mark internship as finished.');
     } finally {
       setIsActionLoading(null);
     }
@@ -325,6 +359,83 @@ const CompanyDashboard = () => {
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
+            {/* Active Interns List */}
+            <div className="lg:col-span-2 space-y-8">
+              <div className="flex items-center justify-between px-2">
+                <div>
+                  <h3 className="text-2xl font-display font-bold text-black tracking-tight">Active Interns</h3>
+                  <p className="text-[11px] font-bold uppercase tracking-widest text-black/30 mt-1">Students currently in internship</p>
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                {isLoading ? (
+                  Array(2).fill(0).map((_, i) => (
+                    <div key={i} className="h-32 bg-white rounded-[2.5rem] border border-gray-100 animate-pulse" />
+                  ))
+                ) : activeInterns.length === 0 ? (
+                  <div className="bg-white p-12 rounded-[3rem] border border-gray-100 text-center border-dashed">
+                    <p className="text-navy-900/30 font-bold uppercase tracking-widest text-[11px]">No active interns</p>
+                  </div>
+                ) : (
+                  activeInterns.map((intern, i) => {
+                    const today = new Date();
+                    const endDate = new Date(intern.endDate);
+                    const isFinished = today >= endDate;
+
+                    return (
+                      <motion.div 
+                        key={intern.id}
+                        initial={{ opacity: 0, x: -20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: i * 0.1 }}
+                        className="bg-white p-8 rounded-[2.5rem] border border-gray-100 shadow-sm transition-all"
+                      >
+                        <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-8">
+                          <div className="flex items-center gap-5">
+                            <div className="w-14 h-14 rounded-2xl bg-black overflow-hidden flex items-center justify-center text-white font-bold text-xl">
+                              {intern.studentPhoto ? (
+                                <img src={intern.studentPhoto} alt={intern.studentName} className="w-full h-full object-cover" />
+                              ) : (
+                                intern.studentName[0]
+                              )}
+                            </div>
+                            <div>
+                              <h4 className="text-lg font-display font-bold text-black leading-tight mb-1">{intern.studentName}</h4>
+                              <p className="text-[11px] font-bold uppercase tracking-widest text-black/30">{intern.offerTitle}</p>
+                            </div>
+                          </div>
+
+                          <div className="flex-1">
+                            <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-navy-900/30 mb-2">Duration</p>
+                            <div className="flex items-center gap-3 text-sm font-bold text-navy-900">
+                              <Calendar size={14} className="text-blue-600" />
+                              {intern.startDate} — {intern.endDate}
+                            </div>
+                          </div>
+
+                          <button 
+                            disabled={!isFinished || isActionLoading === intern.id}
+                            onClick={() => handleMarkFinished(intern.id)}
+                            className={`px-6 py-3 rounded-2xl font-bold text-[10px] uppercase tracking-widest transition-all flex items-center gap-2 ${
+                              isFinished 
+                                ? 'bg-green-600 text-white hover:bg-navy-900 shadow-lg shadow-green-600/20' 
+                                : 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                            }`}
+                          >
+                            {isActionLoading === intern.id ? <Loader2 size={14} className="animate-spin" /> : <CheckCircle2 size={14} />}
+                            Mark as Finished
+                          </button>
+                        </div>
+                      </motion.div>
+                    );
+                  })
+                )}
+              </div>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
             {/* Recent Applications */}
             <div className="lg:col-span-2 space-y-8">
               <div className="flex items-center justify-between px-2">
@@ -416,7 +527,7 @@ const CompanyDashboard = () => {
                 ) : offers.length === 0 ? (
                   <div className="bg-white p-12 rounded-[3rem] border border-gray-100 text-center border-dashed">
                     <p className="text-navy-900/30 font-bold uppercase tracking-widest text-[11px]">No active offers</p>
-                    <Link to="/company/offers" className="mt-6 inline-flex px-6 py-3 bg-navy-900 text-white rounded-xl text-[11px] font-bold uppercase tracking-widest hover:bg-blue-600 transition-all">Post Now</Link>
+                    <Link to="/company/offers/new" className="mt-6 inline-flex px-6 py-3 bg-navy-900 text-white rounded-xl text-[11px] font-bold uppercase tracking-widest hover:bg-blue-600 transition-all">Post Now</Link>
                   </div>
                 ) : (
                   offers.map((offer, i) => (

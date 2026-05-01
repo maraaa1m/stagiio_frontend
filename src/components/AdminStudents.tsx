@@ -17,10 +17,11 @@ import {
   Bell,
   ArrowRight,
   Loader2,
-  AlertCircle
+  AlertCircle,
+  CreditCard
 } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import api from '@/api';
 import { toast, Toaster } from 'sonner';
 import { jwtDecode } from 'jwt-decode';
 
@@ -58,7 +59,6 @@ const AdminStudents = () => {
 
   const fetchData = async () => {
     setIsLoading(true);
-    const token = localStorage.getItem('access_token');
 
     // Extract dept from string like "Name (DEPT)"
     const extractDeptFromName = (name: string) => {
@@ -68,25 +68,30 @@ const AdminStudents = () => {
     };
 
     try {
-      const response = await axios.get('/api/admin/students/', {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      const response = await api.get('/api/admin/students/');
       const data = Array.isArray(response.data) ? response.data : (response.data?.students || response.data?.results || []);
       
       let mapped = data.map((s: any) => {
         const studentObj = s.student || s.user || s || {};
         const studentName = (typeof studentObj === 'object' ? `${studentObj.firstName || studentObj.first_name || ''} ${studentObj.lastName || studentObj.last_name || ''}`.trim() : studentObj) || '';
         
+        const dept = studentObj.department || studentObj.student_department || s.student_department || s.department || extractDeptFromName(studentName) || '';
+
         return {
           id: s.id || studentObj.id,
           firstName: studentObj.firstName || studentObj.first_name || studentName.split(' ')[0] || '',
           lastName: studentObj.lastName || studentObj.last_name || studentName.split(' ')[1] || '',
           email: studentObj.email || '',
-          department: studentObj.department || studentObj.student_department || s.student_department || s.department || extractDeptFromName(studentName) || '',
+          department: typeof dept === 'object' ? (dept.name || '') : String(dept || ''),
           isPlaced: s.isPlaced || s.is_placed || studentObj.isPlaced || studentObj.is_placed || false,
-          cvLink: s.cvFile || s.cv_file || s.cv || studentObj.cvFile || studentObj.cv_file || studentObj.cv || '',
-          photo: studentObj.profile_photo?.url || studentObj.profile_photo || studentObj.photo || studentObj.profilePhoto || s.photo || '',
-          universityWilaya: s.universityWilaya || s.wilaya || studentObj.wilaya || studentObj.universityWilaya || ''
+          cvLink: s.cvUrl || s.cv_url || s.cvFile || s.cv_file || s.cv || 
+                  studentObj.cvUrl || studentObj.cv_url || studentObj.cvFile || studentObj.cv_file || studentObj.cv || 
+                  (typeof studentObj.cv === 'object' ? studentObj.cv?.url : '') || '',
+          photo: (typeof studentObj.profile_photo === 'object' ? studentObj.profile_photo?.url : studentObj.profile_photo) || 
+                 studentObj.photo || studentObj.profilePhoto || studentObj.photoUrl || s.photo || '',
+          universityWilaya: s.universityWilaya || s.wilaya || studentObj.wilaya || studentObj.universityWilaya || '',
+          socialSecurityNumber: studentObj.social_security_number || studentObj.socialSecurityNumber || s.social_security_number || s.socialSecurityNumber || '',
+          IDCardNumber: studentObj.idCardNumber || studentObj.id_card_number || studentObj.IDCardNumber || s.idCardNumber || s.id_card_number || s.IDCardNumber || ''
         };
       });
 
@@ -321,6 +326,20 @@ const AdminStudents = () => {
                       <p className="text-[11px] font-bold text-black/40 truncate mt-1">
                         {student.email}
                       </p>
+                      <div className="flex items-center gap-4 mt-2">
+                        {(student as any).socialSecurityNumber && (
+                          <div className="flex items-center gap-1.5 text-[9px] font-bold text-black/30">
+                            <CreditCard size={10} />
+                            SSN: {(student as any).socialSecurityNumber}
+                          </div>
+                        )}
+                        {(student as any).IDCardNumber && (
+                          <div className="flex items-center gap-1.5 text-[9px] font-bold text-black/30">
+                            <CreditCard size={10} />
+                            ID: {(student as any).IDCardNumber}
+                          </div>
+                        )}
+                      </div>
                     </div>
                   </div>
 

@@ -5,7 +5,7 @@ import {
   FileText, Download, Search, User, Briefcase, Calendar,
 } from 'lucide-react';
 import { useNavigate, Link } from 'react-router-dom';
-import axios from 'axios';
+import api from '@/api';
 import { toast, Toaster } from 'sonner';
 
 interface Agreement {
@@ -23,13 +23,11 @@ const AdminAgreements = () => {
   const [isLoading, setIsLoading]   = useState(true);
   const [search, setSearch]         = useState('');
 
-  const headers = () => ({ Authorization: `Bearer ${localStorage.getItem('access_token')}` });
-
   useEffect(() => {
     const fetch = async () => {
       setIsLoading(true);
       try {
-        const res = await axios.get('/api/admin/agreements/', { headers: headers() });
+        const res = await api.get('/api/admin/agreements/');
         setAgreements(Array.isArray(res.data) ? res.data : []);
       } catch {
         toast.error('Failed to load agreements.');

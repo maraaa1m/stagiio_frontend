@@ -5,7 +5,7 @@ import {
   CheckCircle2, X, Loader2, MapPin, Globe, Phone, ShieldX, Search,
 } from 'lucide-react';
 import { useNavigate, Link } from 'react-router-dom';
-import axios from 'axios';
+import api from '@/api';
 import { toast, Toaster } from 'sonner';
 
 interface Company {
@@ -27,14 +27,12 @@ const AdminCompanies = () => {
   const [search, setSearch]                 = useState('');
   const [activeTab, setActiveTab]           = useState<'APPROVED' | 'BLACKLISTED'>('APPROVED');
 
-  const headers = () => ({ Authorization: `Bearer ${localStorage.getItem('access_token')}` });
-
   const fetchData = async () => {
     setIsLoading(true);
     try {
       const [approvedRes, blacklistRes] = await Promise.all([
-        axios.get('/api/admin/companies/', { headers: headers() }),
-        axios.get('/api/admin/companies/blacklisted/', { headers: headers() }),
+        api.get('/api/admin/companies/'),
+        api.get('/api/admin/companies/blacklisted/'),
       ]);
       const approved    = (Array.isArray(approvedRes.data) ? approvedRes.data : []).map((c: any) => ({ ...c, isBlacklisted: false }));
       const blacklisted = (Array.isArray(blacklistRes.data) ? blacklistRes.data : []).map((c: any) => ({ ...c, isBlacklisted: true, totalOffers: 0 }));
@@ -51,7 +49,7 @@ const AdminCompanies = () => {
   const handleBlacklist = async (id: number) => {
     setIsActionLoading(id);
     try {
-      await axios.put(`/api/admin/companies/${id}/blacklist/`, {}, { headers: headers() });
+      await api.put(`/api/admin/companies/${id}/blacklist/`, {});
       toast.success('Company blacklisted.');
       setCompanies(prev => prev.map(c => c.id === id ? { ...c, isBlacklisted: true } : c));
     } catch {

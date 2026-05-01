@@ -19,7 +19,7 @@ import {
 } from "lucide-react";
 import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import axios from 'axios';
+import api from '@/api';
 
 const Navbar = ({ user, handleLogout, getDashboardLink, getProfileLink }: any) => {
   const [isOpen, setIsOpen] = useState(false);
@@ -284,7 +284,7 @@ const Hero = ({ user, getDashboardLink }: any) => {
               ) : (
                 <>
                   Find The Perfect <br />
-                  <span className="text-blue-600 italic"> Internship </span> <br /> In Minutes
+                  <span className="text-blue-600 italic"> Internship </span> <br /> In Minute
                 </>
               )}
             </h1>
@@ -534,7 +534,7 @@ const Footer = () => {
         </div>
 
         <div className="flex flex-col md:flex-row justify-between items-center pt-12 border-t border-gray-100 gap-6">
-          <p className="text-[11px] font-bold uppercase tracking-widest text-navy-900/20">© 2026 Stag.io — Constantine, Algeria</p>
+          <p className="text-[11px] font-bold uppercase tracking-widest text-navy-900/20">© 2026 Stag.io — Algiers, Algeria</p>
           <div className="flex items-center gap-2">
             <span className="text-[11px] font-bold uppercase tracking-widest text-navy-900/20">Crafted for Algerian Excellence</span>
             <div className="w-4 h-4 rounded-full bg-blue-600/10 flex items-center justify-center">
@@ -549,83 +549,38 @@ const Footer = () => {
 
 const AboutUs = () => {
   return (
-    <section id="about-us" className="py-32 bg-white relative overflow-hidden">
+    <section id="about-us" className="py-24 md:py-40 bg-white relative">
       <div className="container mx-auto px-6">
-        <div className="grid lg:grid-cols-2 gap-20 items-center">
+        <div className="max-w-5xl mx-auto">
           <motion.div
-            initial={{ opacity: 0, x: -30 }}
-            whileInView={{ opacity: 1, x: 0 }}
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            className="space-y-8"
+            transition={{ duration: 0.8 }}
+            className="space-y-16"
           >
-            <div>
-              <p className="text-[10px] font-bold uppercase tracking-[0.3em] text-blue-600 mb-4">About Stag.io</p>
-              <h2 className="text-4xl md:text-6xl font-display font-bold text-navy-900 tracking-tighter leading-[0.95]">
-                Bridging The Gap Between <span className="text-blue-600 italic">Education</span> & <span className="text-blue-600 italic">Industry</span>
+            <div className="space-y-8">
+              <div className="inline-flex items-center gap-3 px-4 py-2 rounded-full bg-blue-50 border border-blue-100">
+                <div className="w-2 h-2 rounded-full bg-blue-600" />
+                <span className="text-[11px] font-bold uppercase tracking-[0.2em] text-blue-600 italic">Our Strategic Mission</span>
+              </div>
+              <h2 className="text-5xl md:text-7xl font-display font-bold text-navy-900 tracking-tight leading-[1.05] text-balance">
+                Digital Transformation of <br />
+                <span className="text-blue-600 italic">Higher Education.</span>
               </h2>
             </div>
-            <p className="text-xl text-navy-900/50 font-medium leading-relaxed">
-              Stag.io is Algeria's premier digital platform dedicated to professionalizing the internship ecosystem. We provide the tools for students to jumpstart their careers and for companies to secure the talent of tomorrow.
-            </p>
             
-            <div className="grid sm:grid-cols-2 gap-8">
-              <div className="p-8 bg-paper rounded-[2.5rem] border border-gray-100 space-y-4">
-                <div className="w-12 h-12 rounded-2xl bg-blue-600/10 text-blue-600 flex items-center justify-center">
-                  <GraduationCap size={24} />
+            <div className="max-w-3xl mx-auto space-y-8 text-xl text-navy-900/60 leading-relaxed font-medium">
+              <p>
+                This initiative aims to increase the employability of graduates by ensuring that their academic journey includes high-quality professional immersion through internships. The Department of IFA at the University of Constantine 2, being a center of excellence for Information Technology (TI), produces a high volume of technical profiles annually.
+              </p>
+              <div className="p-10 bg-paper rounded-[3rem] border border-gray-100 shadow-sm relative group overflow-hidden">
+                <div className="absolute top-0 right-0 p-8 text-navy-900/[0.03] select-none pointer-events-none">
+                  <Target size={120} />
                 </div>
-                <h4 className="text-lg font-bold text-navy-900">For Students</h4>
-                <p className="text-sm text-navy-900/50 font-medium leading-relaxed">
-                  Discover exclusive offers, showcase your technical projects, and get accepted through smart matching based on your skill set.
+                <p className="text-navy-900 italic relative z-10">
+                  "However, the 'Area' of internship management is currently underserved by dedicated digital tools. The current environment relies on informal communication and manual paperwork, creating a 'disconnected area' where student potential and corporate needs fail to meet efficiently."
                 </p>
-              </div>
-              <div className="p-8 bg-paper rounded-[2.5rem] border border-gray-100 space-y-4">
-                <div className="w-12 h-12 rounded-2xl bg-blue-600/10 text-blue-600 flex items-center justify-center">
-                  <Building2 size={24} />
-                </div>
-                <h4 className="text-lg font-bold text-navy-900">For Companies</h4>
-                <p className="text-sm text-navy-900/50 font-medium leading-relaxed">
-                  Post offers effortlessly, scout the brightest Algerian talent, and manage internship agreements with a fully automated workflow.
-                </p>
-              </div>
-            </div>
-          </motion.div>
-
-          <motion.div
-            initial={{ opacity: 0, scale: 0.9 }}
-            whileInView={{ opacity: 1, scale: 1 }}
-            viewport={{ once: true }}
-            className="relative"
-          >
-            <div className="aspect-square bg-blue-50 rounded-[4rem] flex items-center justify-center p-12 overflow-hidden border border-blue-100 shadow-premium">
-              <div className="grid grid-cols-2 gap-4 w-full h-full">
-                <div className="bg-white rounded-3xl shadow-sm p-6 flex flex-col justify-between border border-gray-50 transform -rotate-3 hover:rotate-0 transition-transform">
-                  <div className="w-10 h-10 rounded-xl bg-green-50 text-green-600 flex items-center justify-center">
-                    <FileCheck size={20} />
-                  </div>
-                  <p className="text-[10px] font-black uppercase tracking-widest text-navy-900/30">Agreements</p>
-                  <p className="font-bold text-navy-900">Automated PDFs</p>
-                </div>
-                <div className="bg-navy-900 rounded-3xl shadow-lg p-6 flex flex-col justify-between transform rotate-6 hover:rotate-0 transition-transform">
-                  <div className="w-10 h-10 rounded-xl bg-blue-600 text-white flex items-center justify-center">
-                    <Target size={20} />
-                  </div>
-                  <p className="text-[10px] font-black uppercase tracking-widest text-white/30">Matching</p>
-                  <p className="font-bold text-white">Smart Selection</p>
-                </div>
-                <div className="bg-blue-600 rounded-3xl shadow-lg p-6 flex flex-col justify-between transform rotate-2 hover:rotate-0 transition-transform">
-                  <div className="w-10 h-10 rounded-xl bg-white text-blue-600 flex items-center justify-center">
-                    <Search size={20} />
-                  </div>
-                  <p className="text-[10px] font-black uppercase tracking-widest text-white/30">Discovery</p>
-                  <p className="font-bold text-white">Direct Sourcing</p>
-                </div>
-                <div className="bg-paper rounded-3xl shadow-sm p-6 flex flex-col justify-between border border-gray-100 transform -rotate-6 hover:rotate-0 transition-transform">
-                  <div className="w-10 h-10 rounded-xl bg-navy-900 text-white flex items-center justify-center">
-                    <Users size={20} />
-                  </div>
-                  <p className="text-[10px] font-black uppercase tracking-widest text-navy-900/30">Talent</p>
-                  <p className="font-bold text-navy-900">Verified Skills</p>
-                </div>
               </div>
             </div>
           </motion.div>
@@ -693,7 +648,7 @@ const ContactSection = () => {
                   </div>
                   <div>
                     <p className="text-[10px] font-black uppercase tracking-widest text-navy-900/20">Headquarters</p>
-                    <p className="font-bold text-navy-900">Constantine, Algeria</p>
+                    <p className="font-bold text-navy-900">Algiers, Algeria</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-5 group">
@@ -718,7 +673,7 @@ const ContactSection = () => {
                       type="text"
                       value={formData.name}
                       onChange={(e) => setFormData({...formData, name: e.target.value})}
-                      placeholder="Full name"
+                      placeholder="Jane Doe"
                       className="w-full bg-paper border border-gray-100 rounded-2xl py-4 px-6 outline-none focus:border-blue-600/30 focus:ring-4 focus:ring-blue-600/5 transition-all font-medium text-navy-900"
                     />
                   </div>
@@ -729,7 +684,7 @@ const ContactSection = () => {
                       type="email"
                       value={formData.email}
                       onChange={(e) => setFormData({...formData, email: e.target.value})}
-                      placeholder="YourEmail@gmail.com"
+                      placeholder="jane@example.com"
                       className="w-full bg-paper border border-gray-100 rounded-2xl py-4 px-6 outline-none focus:border-blue-600/30 focus:ring-4 focus:ring-blue-600/5 transition-all font-medium text-navy-900"
                     />
                   </div>
@@ -787,9 +742,7 @@ export default function LandingPage() {
       setUser({ role });
       // Fetch minimal profile info for the photo
       if (role === 'STUDENT') {
-        axios.get('/api/student/profile/', {
-          headers: { Authorization: `Bearer ${token}` }
-        }).then(res => {
+        api.get('/api/student/profile/').then(res => {
           const data = res.data;
           setUser({
             role,
@@ -801,9 +754,7 @@ export default function LandingPage() {
           // If profile fetch fails, we still have the role
         });
       } else if (role === 'COMPANY') {
-        axios.get('/api/company/profile/', {
-          headers: { Authorization: `Bearer ${token}` }
-        }).then(res => {
+        api.get('/api/company/profile/').then(res => {
           const data = res.data;
           setUser({
             role,
@@ -860,3 +811,4 @@ export default function LandingPage() {
     </>
   );
 }
+

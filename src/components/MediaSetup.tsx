@@ -11,7 +11,7 @@ import {
   File
 } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import api from '@/api';
 import { toast, Toaster } from 'sonner';
 
 interface StudentProfile {
@@ -33,16 +33,8 @@ const MediaSetup = () => {
 
   useEffect(() => {
     const fetchProfile = async () => {
-      const token = localStorage.getItem('access_token');
-      if (!token) {
-        navigate('/login');
-        return;
-      }
-
       try {
-        const response = await axios.get('/api/student/profile/', {
-          headers: { Authorization: `Bearer ${token}` }
-        });
+        const response = await api.get('/api/student/profile/');
         setProfile(response.data);
       } catch (err) {
         console.error('Failed to fetch profile:', err);
@@ -97,9 +89,8 @@ const MediaSetup = () => {
       if (photo) {
         const photoData = new FormData();
         photoData.append('photo', photo);
-        await axios.post('/api/student/profile/photo/', photoData, {
+        await api.post('/api/student/profile/photo/', photoData, {
           headers: { 
-            Authorization: `Bearer ${token}`,
             'Content-Type': 'multipart/form-data'
           }
         });
@@ -109,9 +100,8 @@ const MediaSetup = () => {
       if (cv) {
         const cvData = new FormData();
         cvData.append('cv', cv);
-        await axios.post('/api/student/upload-cv/', cvData, {
+        await api.post('/api/student/upload-cv/', cvData, {
           headers: { 
-            Authorization: `Bearer ${token}`,
             'Content-Type': 'multipart/form-data'
           }
         });
@@ -211,7 +201,7 @@ const MediaSetup = () => {
                     <img src={photoPreview} alt="Preview" className="w-full h-full object-cover" />
                   ) : (
                     <div className="flex flex-col items-center">
-                      <div className="w-full h-full absolute inset-0 flex items-center justify-center bg-paper text-navy-900/10 text-4xl font-display font-bold">
+                      <div className="w-full h-full absolute inset-0 flex items-center justify-center bg-paper text-black/10 text-4xl font-display font-bold">
                         {getInitials()}
                       </div>
                       <div className="relative z-10 flex flex-col items-center text-blue-600 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -288,7 +278,7 @@ const MediaSetup = () => {
               <button 
                 disabled={isLoading}
                 type="submit"
-                className="w-full py-5 bg-navy-900 text-white rounded-2xl font-bold text-[13px] uppercase tracking-widest hover:bg-blue-600 transition-all shadow-xl shadow-navy-900/10 active:scale-[0.98] flex items-center justify-center gap-3 disabled:opacity-70 disabled:cursor-not-allowed"
+                className="w-full py-5 bg-black text-white rounded-2xl font-bold text-[13px] uppercase tracking-widest hover:bg-blue-600 transition-all shadow-xl shadow-black/10 active:scale-[0.98] flex items-center justify-center gap-3 disabled:opacity-70 disabled:cursor-not-allowed"
               >
                 {isLoading ? (
                   <Loader2 className="w-5 h-5 animate-spin" />

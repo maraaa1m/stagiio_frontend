@@ -19,7 +19,7 @@ import {
   Plus
 } from 'lucide-react';
 import { useNavigate, Link } from 'react-router-dom';
-import axios from 'axios';
+import api from '../api';
 import { toast, Toaster } from 'sonner';
 
 interface StudentProfile {
@@ -47,6 +47,9 @@ interface Offer {
   daysLeft?: number;
 }
 
+import StudentSidebar from './StudentSidebar';
+import StudentHeader from './StudentHeader';
+
 const StudentDashboard = () => {
   const navigate = useNavigate();
   const [profile, setProfile] = useState<StudentProfile | null>(null);
@@ -67,16 +70,15 @@ const StudentDashboard = () => {
 
     const fetchData = async () => {
       setIsLoading(true);
-      const headers = { Authorization: `Bearer ${token}` };
 
       try {
         // Parallel fetching
         const [profileRes, statsRes, recommendedRes, expiringRes, notificationsRes] = await Promise.allSettled([
-          axios.get('/api/student/profile/', { headers }),
-          axios.get('/api/student/my-applications/', { headers }),
-          axios.get('/api/offers/recommended/', { headers }),
-          axios.get('/api/offers/expiring-soon/', { headers }),
-          axios.get('/api/notifications/', { headers })
+          api.get('/api/student/profile/'),
+          api.get('/api/student/my-applications/'),
+          api.get('/api/offers/recommended/'),
+          api.get('/api/offers/expiring-soon/'),
+          api.get('/api/notifications/')
         ]);
 
         if (profileRes.status === 'fulfilled') {
@@ -147,12 +149,9 @@ const StudentDashboard = () => {
   };
 
   const handleApply = async (offerId: number) => {
-    const token = localStorage.getItem('access_token');
     setIsApplying(offerId);
     try {
-      await axios.post('/api/applications/apply/', { offer_id: offerId }, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      await api.post('/api/applications/apply/', { offer_id: offerId });
       toast.success('Application sent successfully!');
     } catch (err: any) {
       toast.error(err.response?.data?.detail || 'Failed to apply. Please try again.');
@@ -189,121 +188,17 @@ const StudentDashboard = () => {
       <Toaster position="top-right" richColors />
       
       {/* Sidebar */}
-      <aside className="fixed left-0 top-0 bottom-0 w-72 bg-[#060D1F] text-white flex flex-col z-50 border-r border-white/5">
-        <div className="p-10">
-          <Link to="/" className="flex items-center gap-2.5 group">
-            <div className="w-3 h-3 rounded-full bg-blue-600 group-hover:scale-125 transition-transform duration-500"></div>
-            <span className="font-bold text-2xl tracking-tighter">Stag<span className="text-blue-600">.io</span></span>
-          </Link>
-        </div>
-
-        <nav className="flex-1 px-6 space-y-1.5">
-          <div className="pb-4 px-4">
-            <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-white/20">Main Menu</p>
-          </div>
-          
-          <Link to="/student/dashboard" className="flex items-center gap-4 px-4 py-3.5 bg-blue-600 rounded-2xl text-[13px] font-bold tracking-wide transition-all shadow-lg shadow-blue-600/20 group">
-            <LayoutDashboard size={18} className="group-hover:scale-110 transition-transform" />
-            Dashboard
-          </Link>
-          <Link to="/student/offers" className="flex items-center gap-4 px-4 py-3.5 text-white/40 hover:text-white hover:bg-white/5 rounded-2xl text-[13px] font-bold tracking-wide transition-all group">
-            <Search size={18} className="group-hover:scale-110 transition-transform" />
-            Search Offers
-          </Link>
-          <Link to="/student/applications" className="flex items-center gap-4 px-4 py-3.5 text-white/40 hover:text-white hover:bg-white/5 rounded-2xl text-[13px] font-bold tracking-wide transition-all group">
-            <ClipboardList size={18} className="group-hover:scale-110 transition-transform" />
-            My Applications
-          </Link>
-          
-          <div className="pt-8 pb-4 px-4">
-            <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-white/20">Quick Actions</p>
-          </div>
-          
-          <button 
-            onClick={() => navigate('/student/offers')}
-            className="w-full flex items-center gap-4 px-4 py-3 text-white/40 hover:text-white hover:bg-white/5 rounded-2xl text-[13px] font-bold tracking-wide transition-all group"
-          >
-            <div className="w-8 h-8 rounded-xl bg-white/5 flex items-center justify-center group-hover:bg-blue-600/20 group-hover:text-blue-400 transition-all">
-              <Plus size={16} />
-            </div>
-            New Search
-          </button>
-          
-          <div className="pt-8 pb-4 px-4">
-            <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-white/20">Account</p>
-          </div>
-          
-          <Link to="/student/profile" className="flex items-center gap-4 px-4 py-3.5 text-white/40 hover:text-white hover:bg-white/5 rounded-2xl text-[13px] font-bold tracking-wide transition-all group">
-            <User size={18} className="group-hover:scale-110 transition-transform" />
-            My Profile
-          </Link>
-          <Link to="/student/notifications" className="flex items-center gap-4 px-4 py-3.5 text-white/40 hover:text-white hover:bg-white/5 rounded-2xl text-[13px] font-bold tracking-wide transition-all relative group">
-            <Bell size={18} className="group-hover:scale-110 transition-transform" />
-            Notifications
-            {unreadNotifications > 0 && (
-              <span className="absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 bg-blue-600 rounded-full text-[10px] flex items-center justify-center font-bold">
-                {unreadNotifications}
-              </span>
-            )}
-          </Link>
-        </nav>
-
-        <div className="p-8 border-t border-white/5">
-          <div className="bg-white/5 rounded-[2rem] p-5 mb-6 border border-white/5">
-            <div className="flex items-center gap-4 mb-4">
-              <div className="w-12 h-12 rounded-2xl bg-black overflow-hidden flex items-center justify-center text-white font-bold text-sm shadow-lg shadow-black/10">
-                {profile?.photoUrl ? (
-                  <img src={profile.photoUrl} alt="Me" className="w-full h-full object-cover" />
-                ) : (
-                  getInitials()
-                )}
-              </div>
-              <div className="overflow-hidden">
-                <p className="font-bold text-sm truncate leading-tight">{profile?.firstName} {profile?.lastName}</p>
-                <p className="text-[10px] text-white/30 font-bold uppercase tracking-widest truncate mt-1">Student Account</p>
-              </div>
-            </div>
-            <button 
-              onClick={handleSignOut}
-              className="w-full flex items-center justify-center gap-3 py-3 bg-white/5 hover:bg-red-500/10 hover:text-red-500 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all border border-white/5"
-            >
-              <LogOut size={14} />
-              Sign Out
-            </button>
-          </div>
-        </div>
-      </aside>
+      <StudentSidebar unreadNotifications={unreadNotifications} />
 
       {/* Main Content */}
       <main className="flex-1 ml-72 min-h-screen">
         {/* Top Bar */}
-        <header className="h-24 bg-white/80 backdrop-blur-xl border-b border-gray-100 flex items-center justify-between px-12 sticky top-0 z-40">
-          <div>
-            <h2 className="text-2xl font-display font-bold text-black tracking-tight">
-              Welcome back, {profile?.firstName || 'Student'}
-            </h2>
-            <p className="text-[11px] font-bold uppercase tracking-widest text-black/30 mt-1">
-              {new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
-            </p>
-          </div>
-          
-          <div className="flex items-center gap-8">
-            <div className="hidden md:flex items-center gap-4 px-5 py-2.5 bg-paper rounded-2xl border border-gray-100">
-              <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
-              <span className="text-[11px] font-bold uppercase tracking-widest text-black/40">System Online</span>
-            </div>
-            
-            <div className="flex items-center gap-4">
-              <button className="relative p-3 bg-paper rounded-2xl text-black/40 hover:text-blue-600 hover:bg-blue-50 transition-all border border-gray-100">
-                <Bell size={20} />
-                {unreadNotifications > 0 && (
-                  <span className="absolute top-2.5 right-2.5 w-2.5 h-2.5 bg-blue-600 rounded-full border-2 border-white" />
-                )}
-              </button>
-              {getInitialsBadge()}
-            </div>
-          </div>
-        </header>
+        <StudentHeader 
+          title={`Welcome back, ${profile?.firstName || 'Student'}`}
+          subtitle={new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
+          profile={profile}
+          unreadNotifications={unreadNotifications}
+        />
 
         <div className="p-12 space-y-12 max-w-7xl mx-auto">
           {/* Stats Row */}
@@ -502,4 +397,3 @@ const StudentDashboard = () => {
 };
 
 export default StudentDashboard;
-

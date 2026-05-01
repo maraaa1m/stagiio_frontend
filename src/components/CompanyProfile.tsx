@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'motion/react';
 import { 
   Building2, 
@@ -20,7 +20,7 @@ import {
   Bell
 } from 'lucide-react';
 import { useNavigate, Link } from 'react-router-dom';
-import axios from 'axios';
+import api from '@/api';
 import { toast, Toaster } from 'sonner';
 
 interface CompanyProfileData {
@@ -31,7 +31,6 @@ interface CompanyProfileData {
   description: string;
   website: string;
   registreCommerce?: string;
-  logoUrl?: string;
   isApproved: boolean;
 }
 
@@ -41,19 +40,14 @@ const CompanyProfile = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
-  const [isUploadingLogo, setIsUploadingLogo] = useState(false);
-  const logoInputRef = useRef<HTMLInputElement>(null);
   
   const [formData, setFormData] = useState<Partial<CompanyProfileData>>({});
 
   useEffect(() => {
     const fetchProfile = async () => {
       setIsLoading(true);
-      const token = localStorage.getItem('access_token');
       try {
-        const response = await axios.get('/api/company/profile/', {
-          headers: { Authorization: `Bearer ${token}` }
-        });
+        const response = await api.get('/api/company/profile/');
         const data = response.data;
         const mappedData = {
           companyName: data.companyName || data.company_name || '',
@@ -63,7 +57,6 @@ const CompanyProfile = () => {
           description: data.description || '',
           website: data.website || '',
           registreCommerce: data.registreCommerce || data.registre_commerce || '',
-          logoUrl: data.logoUrl || data.logo_url || data.logo || '',
           isApproved: data.isApproved || data.is_approved || false,
         };
         setProfile(mappedData);
@@ -79,17 +72,13 @@ const CompanyProfile = () => {
 
   const handleSave = async () => {
     setIsSaving(true);
-    const token = localStorage.getItem('access_token');
     try {
-      // FIX: correct URL is /api/company/update/ not /api/company/profile/update/
-      await axios.put('/api/company/update/', {
-        companyName: formData.companyName,
-        phoneNumber: formData.phoneNumber,
+      await api.put('/api/company/update/', {
+        company_name: formData.companyName,
+        phone_number: formData.phoneNumber,
         location: formData.location,
         description: formData.description,
         website: formData.website,
-      }, {
-        headers: { Authorization: `Bearer ${token}` }
       });
       setProfile(prev => ({ ...prev!, ...formData }));
       setIsEditing(false);
@@ -101,33 +90,25 @@ const CompanyProfile = () => {
     }
   };
 
-  // FIX: wired up logo upload — was a dead button before
   const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    if (!file.type.startsWith('image/')) {
-      toast.error('Please select an image file.');
-      return;
-    }
-    setIsUploadingLogo(true);
-    const token = localStorage.getItem('access_token');
-    const formDataFile = new FormData();
-    formDataFile.append('logo', file);
+
+    const formData = new FormData();
+    formData.append('logo', file);
+
+    const toastId = toast.loading('Uploading logo...');
     try {
-      const res = await axios.post('/api/company/upload-logo/', formDataFile, {
+      await api.post('/api/company/logo/upload/', formData, {
         headers: {
-          Authorization: `Bearer ${token}`,
-          'Content-Type': 'multipart/form-data',
+          'Content-Type': 'multipart/form-data'
         }
       });
-      const newLogo = res.data?.logoUrl || res.data?.logo_url || res.data?.logo || '';
-      setProfile(prev => prev ? { ...prev, logoUrl: newLogo } : prev);
-      toast.success('Logo updated!');
+      toast.success('Logo uploaded successfully!', { id: toastId });
+      // Refresh to show new logo
+      window.location.reload();
     } catch (err) {
-      toast.error('Failed to upload logo.');
-    } finally {
-      setIsUploadingLogo(false);
-      if (logoInputRef.current) logoInputRef.current.value = '';
+      toast.error('Failed to upload logo.', { id: toastId });
     }
   };
 
@@ -230,24 +211,17 @@ const CompanyProfile = () => {
             <div className="absolute top-0 right-0 w-64 h-64 bg-blue-50/50 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 -z-10" />
             
             <div className="flex flex-col md:flex-row items-center gap-10">
-              {/* FIX: camera button now has a wired file input for logo upload */}
               <div className="relative group">
-                <div className="w-40 h-40 rounded-[2.5rem] bg-navy-900 flex items-center justify-center text-white overflow-hidden shadow-2xl shadow-navy-900/20">
-                  {profile?.logoUrl ? (
-                    <img src={profile.logoUrl} alt="Logo" className="w-full h-full object-cover" />
-                  ) : (
-                    <span className="text-5xl font-bold">{profile?.companyName?.[0]}</span>
-                  )}
+                <div className="w-40 h-40 rounded-[2.5rem] bg-navy-900 overflow-hidden flex items-center justify-center text-white text-5xl font-bold shadow-2xl shadow-navy-900/20">
+                  {profile?.companyName?.[0]}
                 </div>
-                <label className="absolute -bottom-2 -right-2 p-3 bg-blue-600 text-white rounded-2xl shadow-lg hover:scale-110 active:scale-95 transition-all cursor-pointer border-2 border-white">
-                  {isUploadingLogo ? <Loader2 size={20} className="animate-spin" /> : <Camera size={20} />}
-                  <input
-                    ref={logoInputRef}
-                    type="file"
+                <label className="absolute -bottom-2 -right-2 p-3 bg-blue-600 text-white rounded-2xl shadow-lg hover:scale-110 active:scale-95 transition-all cursor-pointer">
+                  <Camera size={20} />
+                  <input 
+                    type="file" 
+                    className="hidden" 
                     accept="image/*"
-                    className="hidden"
                     onChange={handleLogoUpload}
-                    disabled={isUploadingLogo}
                   />
                 </label>
               </div>

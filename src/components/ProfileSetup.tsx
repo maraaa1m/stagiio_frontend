@@ -10,7 +10,7 @@ import {
   Plus
 } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import api from '@/api';
 
 interface Skill {
   id: number;
@@ -23,6 +23,7 @@ const ProfileSetup = () => {
   const [github, setGithub] = useState('');
   const [portfolio, setPortfolio] = useState('');
   const [idCard, setIdCard] = useState('');
+  const [ssn, setSsn] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isFetching, setIsFetching] = useState(true);
   const [error, setError] = useState('');
@@ -30,15 +31,8 @@ const ProfileSetup = () => {
 
   useEffect(() => {
     const fetchSkills = async () => {
-      const token = localStorage.getItem('access_token');
-      if (!token) {
-        navigate('/login');
-        return;
-      }
       try {
-        const response = await axios.get('/api/skills/', {
-          headers: { Authorization: `Bearer ${token}` }
-        });
+        const response = await api.get('/api/skills/');
         // Ensure we set an array even if the API returns something else
         const skillsData = Array.isArray(response.data) ? response.data : [];
         setAvailableSkills(skillsData);
@@ -72,18 +66,16 @@ const ProfileSetup = () => {
     setIsLoading(true);
     setError('');
 
-    const token = localStorage.getItem('access_token');
-
     try {
-      await axios.put('/api/student/update/', {
+      await api.put('/api/student/update/', {
         skills: selectedSkills,
         githubLink: github,
         portfolioLink: portfolio,
-        IDCardNumber: idCard
-      }, {
-        headers: {
-          Authorization: `Bearer ${token}`
-        }
+        IDCardNumber: idCard,
+        id_card_number: idCard,
+        idCardNumber: idCard,
+        socialSecurityNumber: ssn,
+        social_security_number: ssn
       });
       
       localStorage.setItem('profileComplete', 'true');
@@ -220,7 +212,7 @@ const ProfileSetup = () => {
               </div>
 
               {/* ID Card Number */}
-              <div className="md:col-span-2 space-y-2">
+              <div className="space-y-2">
                 <label className="text-[11px] font-bold uppercase tracking-widest text-navy-900/40 ml-4">
                   ID Card Number <span className="text-red-500">*</span>
                 </label>
@@ -234,6 +226,26 @@ const ProfileSetup = () => {
                     value={idCard}
                     onChange={(e) => setIdCard(e.target.value)}
                     placeholder="Enter your student ID"
+                    className="w-full bg-paper border border-gray-100 rounded-2xl py-4 pl-14 pr-6 outline-none focus:border-blue-600/30 focus:ring-4 focus:ring-blue-600/5 transition-all font-medium text-navy-900"
+                  />
+                </div>
+              </div>
+
+              {/* Social Security Number */}
+              <div className="space-y-2">
+                <label className="text-[11px] font-bold uppercase tracking-widest text-navy-900/40 ml-4">
+                  Social Security Number <span className="text-red-500">*</span>
+                </label>
+                <div className="relative group">
+                  <div className="absolute left-5 top-1/2 -translate-y-1/2 text-navy-900/30 group-focus-within:text-blue-600 transition-colors">
+                    <CreditCard size={18} />
+                  </div>
+                  <input 
+                    required
+                    type="text"
+                    value={ssn}
+                    onChange={(e) => setSsn(e.target.value)}
+                    placeholder="Enter your SSN"
                     className="w-full bg-paper border border-gray-100 rounded-2xl py-4 pl-14 pr-6 outline-none focus:border-blue-600/30 focus:ring-4 focus:ring-blue-600/5 transition-all font-medium text-navy-900"
                   />
                 </div>

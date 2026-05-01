@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { motion } from 'motion/react';
 import { Mail, ArrowLeft, ArrowRight, Loader2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import axios from 'axios';
+import api from '@/api';
 
 const ForgotPassword = () => {
   const [email, setEmail] = useState('');
@@ -17,7 +17,7 @@ const ForgotPassword = () => {
     setError('');
 
     try {
-      await axios.post('/api/auth/forgot-password/', { email });
+      await api.post('/api/auth/forgot-password/', { email });
       setMessage('If an account exists with this email, you will receive a reset link shortly.');
     } catch (err: any) {
       setError(err.response?.data?.detail || 'Something went wrong. Please try again.');

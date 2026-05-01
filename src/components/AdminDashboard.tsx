@@ -22,7 +22,7 @@ import {
   ArrowRight
 } from 'lucide-react';
 import { useNavigate, Link } from 'react-router-dom';
-import axios from 'axios';
+import api from '@/api';
 import { toast, Toaster } from 'sonner';
 import { jwtDecode } from 'jwt-decode';
 
@@ -47,6 +47,7 @@ interface PendingCompany {
 interface PendingAgreement {
   id: number;
   student: string;
+  studentId?: number;
   studentEmail: string;
   studentPhoto?: string;
   studentDepartment?: string;
@@ -59,11 +60,22 @@ interface PendingAgreement {
   supervisorName?: string;
 }
 
+interface PendingCertification {
+  id: number;
+  studentName: string;
+  studentEmail: string;
+  studentPhoto?: string;
+  companyName: string;
+  offerTitle: string;
+  endDate: string;
+}
+
 const AdminDashboard = () => {
   const navigate = useNavigate();
   const [stats, setStats] = useState<AdminStats | null>(null);
   const [pendingCompanies, setPendingCompanies] = useState<PendingCompany[]>([]);
   const [pendingAgreements, setPendingAgreements] = useState<PendingAgreement[]>([]);
+  const [pendingCerts, setPendingCerts] = useState<PendingCertification[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isActionLoading, setIsActionLoading] = useState<number | null>(null);
   
@@ -98,8 +110,6 @@ const AdminDashboard = () => {
 
   const fetchData = async () => {
     setIsLoading(true);
-    const token = localStorage.getItem('access_token');
-    const headers = { Authorization: `Bearer ${token}` };
     
     // Extract dept from string like "Name (DEPT)"
     const extractDeptFromName = (name: string) => {
@@ -110,7 +120,7 @@ const AdminDashboard = () => {
 
     const fetchStats = async () => {
       try {
-        const statsRes = await axios.get('/api/admin/statistics/', { headers });
+        const statsRes = await api.get('/api/admin/statistics/');
         const sData = statsRes.data;
         setStats({
           totalStudents: sData.total_students || sData.totalStudents || 0,
@@ -128,7 +138,7 @@ const AdminDashboard = () => {
 
     const fetchCompanies = async () => {
       try {
-        const companiesRes = await axios.get('/api/admin/companies/pending/', { headers });
+        const companiesRes = await api.get('/api/admin/companies/pending/');
         setPendingCompanies(Array.isArray(companiesRes.data) ? companiesRes.data.map((c: any) => ({
           id: c.id,
           companyName: c.companyName || c.company_name || '',
@@ -143,7 +153,7 @@ const AdminDashboard = () => {
 
     const fetchAgreements = async () => {
       try {
-        const agreementsRes = await axios.get('/api/admin/pending-validations/', { headers });
+        const agreementsRes = await api.get('/api/admin/pending-validations/');
         const data = Array.isArray(agreementsRes.data) ? agreementsRes.data : (agreementsRes.data?.agreements || agreementsRes.data?.results || agreementsRes.data?.applications || []);
 
         setPendingAgreements(data.map((a: any) => {
@@ -156,12 +166,15 @@ const AdminDashboard = () => {
                    `${a.student_first_name || ''} ${a.student_last_name || ''}`.trim() || 
                    'Student';
 
+          const dept = (typeof studentObj === 'object' ? (studentObj.department?.name || studentObj.department || studentObj.dept) : null) || a.student_department || a.department || a.dept || '';
+
           return {
             id: a.id,
             student: studentName,
+            studentId: studentObj.id || a.student_id || a.studentId || 0,
             studentEmail: (typeof studentObj === 'object' ? studentObj.email : null) || a.studentEmail || a.student_email || a.email || '',
             studentPhoto: (typeof studentObj === 'object' ? (studentObj.profile_photo?.url || studentObj.photo) : null) || a.student_photo || a.photo || '',
-            studentDepartment: (typeof studentObj === 'object' ? (studentObj.department || studentObj.dept) : null) || a.student_department || a.department || a.dept || extractDeptFromName(studentName) || '',
+            studentDepartment: typeof dept === 'object' ? (dept.name || '') : String(dept || ''),
             company: (typeof companyObj === 'object' ? (companyObj.name || companyObj.companyName || companyObj.company_name) : String(companyObj || '')) || a.companyName || a.company_name || '',
             offer: (typeof offerObj === 'object' ? (offerObj.title || offerObj.offerTitle || offerObj.offer_title) : String(offerObj || '')) || a.offerTitle || a.offer_title || '',
             score: a.score || a.matchingScore || a.matching_score || 0,
@@ -180,6 +193,7 @@ const AdminDashboard = () => {
                 const sDept = String(a.studentDepartment || '').toUpperCase().trim();
                 return sDept === deptHead || a.student.toUpperCase().includes(`(${deptHead})`);
               }
+              return true; // DEAN sees everything
             } catch (e) {
               console.error("Dashboard filter error:", e);
             }
@@ -191,11 +205,30 @@ const AdminDashboard = () => {
       }
     };
 
+    const fetchPendingCertifications = async () => {
+      try {
+        const certsRes = await api.get('/api/admin/pending-certifications/');
+        const data = Array.isArray(certsRes.data) ? certsRes.data : (certsRes.data?.results || []);
+        setPendingCerts(data.map((c: any) => ({
+          id: c.id,
+          studentName: `${c.student?.firstName || c.student?.first_name || ''} ${c.student?.lastName || c.student?.last_name || ''}`,
+          studentEmail: c.student?.email || '',
+          studentPhoto: c.student?.profile_photo || c.student?.photo || '',
+          companyName: c.company_name || c.company?.companyName || '',
+          offerTitle: c.offer?.title || '',
+          endDate: c.end_date || c.endDate || ''
+        })));
+      } catch (err) {
+        console.error('Error fetching pending certs:', err);
+      }
+    };
+
     try {
       await Promise.allSettled([
         fetchStats(),
         fetchCompanies(),
-        fetchAgreements()
+        fetchAgreements(),
+        fetchPendingCertifications()
       ]);
     } catch (err) {
       console.error('Error fetching dashboard data:', err);
@@ -211,11 +244,8 @@ const AdminDashboard = () => {
 
   const handleApproveCompany = async (id: number) => {
     setIsActionLoading(id);
-    const token = localStorage.getItem('access_token');
     try {
-      await axios.put(`/api/admin/companies/${id}/approve/`, {}, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      await api.put(`/api/admin/companies/${id}/approve/`, {});
       toast.success('Company approved!');
       setPendingCompanies(prev => prev.filter(c => c.id !== id));
     } catch (err) {
@@ -227,11 +257,8 @@ const AdminDashboard = () => {
 
   const handleRefuseCompany = async (id: number) => {
     setIsActionLoading(id);
-    const token = localStorage.getItem('access_token');
     try {
-      await axios.put(`/api/admin/companies/${id}/refuse/`, {}, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      await api.put(`/api/admin/companies/${id}/refuse/`, {});
       toast.success('Company refused.');
       setPendingCompanies(prev => prev.filter(c => c.id !== id));
     } catch (err) {
@@ -250,7 +277,6 @@ const AdminDashboard = () => {
   const handleAutoValidate = async (agreement: PendingAgreement) => {
     const id = agreement.id;
     setIsActionLoading(id);
-    const token = localStorage.getItem('access_token');
     
     // Auto-generate defaults
     const now = new Date();
@@ -260,14 +286,12 @@ const AdminDashboard = () => {
     const payload = {
       start_date: now.toISOString().split('T')[0],
       end_date: future.toISOString().split('T')[0],
-      topic: agreement.topic || `Internship at ${agreement.company}`,
+      internshipTopic: agreement.topic || `Internship at ${agreement.company}`,
       supervisor_name: agreement.supervisorName || 'Department Head'
     };
 
     try {
-      const response = await axios.post(`/api/admin/validate/${id}/`, payload, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      const response = await api.post(`/api/admin/validate/${id}/`, payload);
       
       const pdfUrl = response.data.pdf_url || response.data.pdfUrl || response.data.url;
       
@@ -283,6 +307,24 @@ const AdminDashboard = () => {
       }
     } catch (err) {
       toast.error('Failed to validate agreement.');
+    } finally {
+      setIsActionLoading(null);
+    }
+  };
+
+  const handleIssueCertificate = async (internshipId: number) => {
+    setIsActionLoading(internshipId);
+    try {
+      const response = await api.post(`/api/admin/internships/${internshipId}/issue-certificate/`, {});
+      const pdfUrl = response.data.pdf_certificate || response.data.pdfUrl || response.data.url;
+      toast.success('Certificate issued successfully!');
+      setPendingCerts(prev => prev.filter(c => c.id !== internshipId));
+      
+      if (pdfUrl) {
+        window.open(pdfUrl, '_blank');
+      }
+    } catch (err) {
+      toast.error('Failed to issue certificate.');
     } finally {
       setIsActionLoading(null);
     }
@@ -478,8 +520,8 @@ const AdminDashboard = () => {
               </div>
             )}
 
-            {/* Pending Validations - Dept Head Mode */}
-            {adminDept && adminDept !== 'DEAN' && (
+            {/* Pending Validations - Dept Head & Dean Mode */}
+            {adminDept && (
               <div className="space-y-8">
                 <div className="flex items-center justify-between px-2">
                   <div>
@@ -517,7 +559,9 @@ const AdminDashboard = () => {
                                 )}
                               </div>
                               <div>
-                                <h4 className="font-bold text-black">{agreement.student}</h4>
+                                <Link to={`/admin/students/${agreement.studentId || agreement.id}`} className="hover:text-blue-600 transition-colors">
+                                  <h4 className="font-bold text-black">{agreement.student}</h4>
+                                </Link>
                                 <p className="text-[10px] font-bold uppercase tracking-widest text-black/30">{agreement.studentEmail}</p>
                               </div>
                             </div>
@@ -553,6 +597,69 @@ const AdminDashboard = () => {
                 </div>
               </div>
             )}
+
+            {/* Awaiting Certification - All Admins */}
+            <div className="space-y-8">
+              <div className="flex items-center justify-between px-2">
+                <div>
+                  <h3 className="text-2xl font-display font-bold text-navy-900 tracking-tight">Awaiting Certification</h3>
+                  <p className="text-[11px] font-bold uppercase tracking-widest text-navy-900/30 mt-1">Completed internships waiting for final documents</p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {isLoading ? (
+                  Array(2).fill(0).map((_, i) => (
+                    <div key={i} className="h-40 bg-white rounded-[2.5rem] border border-gray-100 animate-pulse" />
+                  ))
+                ) : pendingCerts.length === 0 ? (
+                  <div className="md:col-span-2 bg-white p-12 rounded-[3rem] border border-gray-100 text-center border-dashed">
+                    <p className="text-navy-900/30 font-bold uppercase tracking-widest text-[11px]">No pending certifications</p>
+                  </div>
+                ) : (
+                  pendingCerts.map((cert, i) => (
+                    <motion.div 
+                      key={cert.id}
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: i * 0.1 }}
+                      className="bg-white p-8 rounded-[2.5rem] border border-gray-100 shadow-sm transition-all"
+                    >
+                      <div className="space-y-6">
+                        <div className="flex items-center gap-4">
+                          <div className="w-12 h-12 rounded-xl bg-black overflow-hidden flex items-center justify-center text-white font-bold">
+                            {cert.studentPhoto ? (
+                              <img src={cert.studentPhoto} alt={cert.studentName} className="w-full h-full object-cover" />
+                            ) : (
+                              cert.studentName[0]
+                            )}
+                          </div>
+                          <div>
+                            <h4 className="font-bold text-navy-900">{cert.studentName}</h4>
+                            <p className="text-[10px] font-bold uppercase tracking-widest text-navy-900/30">{cert.studentEmail}</p>
+                          </div>
+                        </div>
+
+                        <div className="space-y-1">
+                          <p className="text-[9px] font-bold uppercase tracking-widest text-navy-900/40">Internship Details</p>
+                          <p className="text-sm font-bold text-navy-900">{cert.companyName}</p>
+                          <p className="text-xs text-navy-900/60">{cert.offerTitle}</p>
+                        </div>
+
+                        <button 
+                          onClick={() => handleIssueCertificate(cert.id)}
+                          disabled={isActionLoading === cert.id}
+                          className="w-full py-4 bg-navy-900 text-white rounded-2xl font-bold text-[11px] uppercase tracking-widest hover:bg-blue-600 transition-all flex items-center justify-center gap-3 shadow-lg shadow-navy-900/10"
+                        >
+                          {isActionLoading === cert.id ? <Loader2 size={16} className="animate-spin" /> : <CheckCircle2 size={16} />}
+                          Issue Final Certificate
+                        </button>
+                      </div>
+                    </motion.div>
+                  ))
+                )}
+              </div>
+            </div>
           </div>
         </div>
       </main>
