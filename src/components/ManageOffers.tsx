@@ -41,13 +41,18 @@ interface Offer {
   startingDay?: string;
 }
 
+interface Skill {
+  id: number;
+  skillName: string;
+}
+
 const ManageOffers = () => {
   const navigate = useNavigate();
   const [offers, setOffers] = useState<Offer[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingOffer, setEditingOffer] = useState<Offer | null>(null);
-  const [allSkills, setAllSkills] = useState<string[]>([]);
+  const [allSkills, setAllSkills] = useState<Skill[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState<number | null>(null);
 
@@ -325,9 +330,9 @@ const ManageOffers = () => {
                   </div>
 
                   <div className="flex flex-wrap gap-2 mb-8">
-                    {offer.skills.map(skill => (
-                      <span key={skill} className="px-3 py-1.5 bg-paper rounded-lg text-[10px] font-bold text-navy-900/40 uppercase tracking-widest">
-                        {skill}
+                    {offer.skills.map((skill, si) => (
+                      <span key={si} className="px-3 py-1.5 bg-paper rounded-lg text-[10px] font-bold text-navy-900/40 uppercase tracking-widest">
+                        {typeof skill === 'object' ? skill.skillName || skill.name : skill}
                       </span>
                     ))}
                   </div>

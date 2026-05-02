@@ -28,6 +28,7 @@ import { jwtDecode } from 'jwt-decode';
 
 interface AdminApplication {
   id: number;
+  internshipId?: number | null;
   status: 'PENDING' | 'ACCEPTED' | 'REFUSED' | 'VALIDATED' | 'ONGOING' | 'PENDING_CERT' | 'COMPLETED';
   matchingScore: number;
   appliedAt: string;
@@ -93,6 +94,7 @@ const AdminApplications = () => {
 
         return {
           id: a.id,
+          internshipId: a.internshipId || a.internship?.id || a.internship_id || null,
           status: rawStatus,
           matchingScore: a.score || a.matchingScore || a.matching_score || 0,
           appliedAt: a.appliedAt || a.applied_date || a.created_at || a.date_applied || '',
@@ -154,13 +156,17 @@ const AdminApplications = () => {
     studentName: ''
   });
 
-  const handleIssueCertificate = async (id: number) => {
-    setIsActionLoading(id);
+  const handleIssueCertificate = async (app: AdminApplication) => {
+    if (!app.internshipId) {
+      toast.error('No internship linked to this application.');
+      return;
+    }
+    setIsActionLoading(app.id);
     try {
-      const response = await api.post(`/api/admin/issue-certificate/${id}/`, {});
+      const response = await api.post(`/api/admin/internships/${app.internshipId}/issue-certificate/`, {});
       const pdfUrl = response.data.pdf_url || response.data.pdfUrl || response.data.url;
       toast.success('Certificate issued successfully!');
-      setApplications(prev => prev.map(a => a.id === id ? { ...a, status: 'COMPLETED' } : a));
+      setApplications(prev => prev.map(a => a.id === app.id ? { ...a, status: 'COMPLETED' } : a));
       if (pdfUrl) {
         window.open(pdfUrl, '_blank');
       }
@@ -493,7 +499,7 @@ const AdminApplications = () => {
                         )}
                         {app.status === 'PENDING_CERT' && (
                           <button 
-                            onClick={() => handleIssueCertificate(app.id)}
+                            onClick={() => handleIssueCertificate(app)}
                             disabled={isActionLoading === app.id}
                             className="p-4 bg-green-600 text-white rounded-3xl hover:bg-stone-900 transition-all shadow-xl shadow-green-600/20 flex-1 flex items-center justify-center gap-2 disabled:opacity-50"
                           >

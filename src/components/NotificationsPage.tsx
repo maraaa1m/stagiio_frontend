@@ -77,18 +77,14 @@ const NotificationsPage = () => {
 
   const markAllRead = async () => {
     try {
-      // FIX: correct endpoint — student-scoped mark-all-read
-      await api.put('/api/student/notifications/read-all/', {});
-      setNotifications(prev => prev.map(n => ({ ...n, is_read: true })));
-      toast.success('All notifications marked as read.');
-    } catch {
-      // Fallback: mark each unread notification individually
       const unread = notifications.filter(n => !n.is_read);
       await Promise.allSettled(
         unread.map(n => api.put(`/api/notifications/${n.id}/read/`, {}))
       );
       setNotifications(prev => prev.map(n => ({ ...n, is_read: true })));
       toast.success('All notifications marked as read.');
+    } catch {
+      toast.error('Failed to mark notifications as read.');
     }
   };
 

@@ -28,6 +28,7 @@ import { toast, Toaster } from 'sonner';
 
 interface Application {
   id: number;
+  internshipId?: number | null;
   status: 'PENDING' | 'ACCEPTED' | 'REFUSED' | 'VALIDATED' | 'ONGOING' | 'PENDING_CERT' | 'COMPLETED';
   matchingScore: number;
   student: {
@@ -46,6 +47,7 @@ interface Application {
 const mapApplications = (data: any[]) => {
   return data.map((a: any) => ({
     id: a.id,
+    internshipId: a.internship?.id || a.internshipId || null,
     status: a.status,
     matchingScore: a.matchingScore || a.matching_score || 0,
     student: {
@@ -127,14 +129,18 @@ const CompanyApplications = () => {
     }
   };
 
-  const handleEndInternship = async (appId: number) => {
-    setIsActionLoading(appId);
+  const handleEndInternship = async (app: Application) => {
+    if (!app.internshipId) {
+      toast.error('No internship found for this application.');
+      return;
+    }
+    setIsActionLoading(app.id);
     try {
-      await api.post(`/api/company/applications/${appId}/end-internship/`, {});
+      await api.post(`/api/company/internships/${app.internshipId}/mark-ended/`, {});
       toast.success('Internship marked as ended. Waiting for admin certification.');
       // Refresh list
       const response = await api.get('/api/company/applications/');
-      const data = response.data.applications || response.data.results || response.data;
+      const data = Array.isArray(response.data) ? response.data : (response.data?.applications || response.data?.results || response.data);
       setApplications(mapApplications(data));
     } catch (err) {
       toast.error('Failed to mark internship as ended.');
@@ -309,9 +315,9 @@ const CompanyApplications = () => {
                     </div>
 
                     <div className="flex-1 flex flex-wrap gap-2">
-                      {app.student.skills.slice(0, 3).map(skill => (
-                        <span key={skill} className="px-3 py-1.5 bg-paper rounded-lg text-[10px] font-bold text-navy-900/40 uppercase tracking-widest">
-                          {skill}
+                      {app.student.skills.slice(0, 3).map((skill, si) => (
+                        <span key={si} className="px-3 py-1.5 bg-paper rounded-lg text-[10px] font-bold text-navy-900/40 uppercase tracking-widest">
+                          {typeof skill === 'object' ? (skill as any).skillName || (skill as any).name : skill}
                         </span>
                       ))}
                     </div>
@@ -330,9 +336,9 @@ const CompanyApplications = () => {
                     </div>
 
                     <div className="flex items-center gap-3">
-                      {(app.status === 'VALIDATED' || app.status === 'ONGOING') && (
+                      {(app.status === 'VALIDATED' || app.status === 'ONGOING') && app.internshipId && (
                         <button 
-                          onClick={() => handleEndInternship(app.id)}
+                          onClick={() => handleEndInternship(app)}
                           disabled={isActionLoading !== null}
                           className="px-6 py-4 bg-orange-500 text-white rounded-[1.5rem] hover:bg-orange-600 transition-all font-bold text-[11px] uppercase tracking-widest shadow-xl shadow-orange-500/10 flex items-center gap-3 disabled:opacity-50"
                         >
@@ -465,9 +471,9 @@ const CompanyApplications = () => {
                 <div className="space-y-4">
                   <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-navy-900/30">Technical Expertise</p>
                   <div className="flex flex-wrap gap-2.5">
-                    {reviewModal.app.student.skills.map((skill: string) => (
-                      <span key={skill} className="px-5 py-2.5 bg-paper rounded-[1rem] text-[11px] font-bold text-navy-900/60 uppercase tracking-widest border border-gray-100">
-                        {skill}
+                    {reviewModal.app.student.skills.map((skill: any, si: number) => (
+                      <span key={si} className="px-5 py-2.5 bg-paper rounded-[1rem] text-[11px] font-bold text-navy-900/60 uppercase tracking-widest border border-gray-100">
+                        {typeof skill === 'object' ? skill.skillName || skill.name : skill}
                       </span>
                     ))}
                   </div>
@@ -552,4 +558,3 @@ const CompanyApplications = () => {
 };
 
 export default CompanyApplications;
-

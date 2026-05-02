@@ -98,12 +98,17 @@ const AdminDashboard = () => {
 
   useEffect(() => {
     const token = localStorage.getItem('access_token');
+    const storedDeptId = localStorage.getItem('department_id');
+    
     if (token) {
       try {
         const decoded: any = jwtDecode(token);
-        setAdminDept(decoded.department || 'DEAN');
+        // Dean Mode: If department_id is null or 'DEAN', it unlocks restricted view
+        const dept = storedDeptId || decoded.department_id || decoded.department;
+        setAdminDept(dept ? dept.toString() : 'DEAN');
       } catch (e) {
         console.error('Error decoding token:', e);
+        setAdminDept('DEAN');
       }
     }
   }, []);
@@ -184,21 +189,15 @@ const AdminDashboard = () => {
             supervisorName: a.supervisorName || a.supervisor_name || ''
           };
         }).filter((a: any) => {
-          const tokenCached = localStorage.getItem('access_token');
-          if (tokenCached) {
-            try {
-              const decoded: any = jwtDecode(tokenCached);
-              const deptHead = String(decoded.department || 'DEAN').toUpperCase().trim();
-              if (deptHead !== 'DEAN') {
-                const sDept = String(a.studentDepartment || '').toUpperCase().trim();
-                return sDept === deptHead || a.student.toUpperCase().includes(`(${deptHead})`);
-              }
-              return true; // DEAN sees everything
-            } catch (e) {
-              console.error("Dashboard filter error:", e);
-            }
-          }
-          return true;
+          const storedDeptId = localStorage.getItem('department_id');
+          // Dean Mode Rule: If department_id is null or 'DEAN', unlock full view
+          if (!storedDeptId || storedDeptId === 'DEAN') return true;
+          
+          const deptHead = storedDeptId.toUpperCase().trim();
+          const sDept = String(a.studentDepartment || '').toUpperCase().trim();
+          
+          // Check if student belongs to the admin's department
+          return sDept === deptHead || a.student.toUpperCase().includes(`(${deptHead})`);
         }));
       } catch (err) {
         console.error('Error fetching agreements:', err);
@@ -210,13 +209,13 @@ const AdminDashboard = () => {
         const certsRes = await api.get('/api/admin/pending-certifications/');
         const data = Array.isArray(certsRes.data) ? certsRes.data : (certsRes.data?.results || []);
         setPendingCerts(data.map((c: any) => ({
-          id: c.id,
-          studentName: `${c.student?.firstName || c.student?.first_name || ''} ${c.student?.lastName || c.student?.last_name || ''}`,
-          studentEmail: c.student?.email || '',
+          id: c.internship?.id || c.internshipId || c.internship_id || c.id,
+          studentName: `${c.student?.firstName || c.student?.first_name || ''} ${c.student?.lastName || c.student?.last_name || ''}`.trim() || c.student || 'Student',
+          studentEmail: c.student?.email || c.studentEmail || '',
           studentPhoto: c.student?.profile_photo || c.student?.photo || '',
-          companyName: c.company_name || c.company?.companyName || '',
-          offerTitle: c.offer?.title || '',
-          endDate: c.end_date || c.endDate || ''
+          companyName: c.company_name || c.company?.companyName || c.company || '',
+          offerTitle: c.offer?.title || c.offerTitle || c.offer || '',
+          endDate: c.internship?.endDate || c.internship?.end_date || c.end_date || c.endDate || '',
         })));
       } catch (err) {
         console.error('Error fetching pending certs:', err);
@@ -553,7 +552,7 @@ const AdminDashboard = () => {
                             <div className="flex items-center gap-4">
                               <div className="w-12 h-12 rounded-xl bg-black overflow-hidden flex items-center justify-center text-white font-bold">
                                 {agreement.studentPhoto ? (
-                                  <img src={agreement.studentPhoto} alt={agreement.student} className="w-full h-full object-cover" />
+                                  <img src={agreement.studentPhoto} alt={agreement.student} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
                                 ) : (
                                   agreement.student[0]
                                 )}
@@ -629,7 +628,7 @@ const AdminDashboard = () => {
                         <div className="flex items-center gap-4">
                           <div className="w-12 h-12 rounded-xl bg-black overflow-hidden flex items-center justify-center text-white font-bold">
                             {cert.studentPhoto ? (
-                              <img src={cert.studentPhoto} alt={cert.studentName} className="w-full h-full object-cover" />
+                              <img src={cert.studentPhoto} alt={cert.studentName} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
                             ) : (
                               cert.studentName[0]
                             )}

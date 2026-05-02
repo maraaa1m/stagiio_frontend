@@ -105,43 +105,45 @@ const CompanyDashboard = () => {
 
         if (profileRes.status === 'fulfilled') setProfile(profileRes.value.data);
         if (appsRes.status === 'fulfilled') {
-          const data = Array.isArray(appsRes.value.data) ? appsRes.value.data : (appsRes.value.data?.applications || []);
+          const data = Array.isArray(appsRes.value.data) ? appsRes.value.data : (appsRes.value.data?.applications || appsRes.value.data?.results || []);
           const mapped = data.map((a: any) => ({
             id: a.id,
-            studentName: `${a.student?.firstName || a.student?.first_name || ''} ${a.student?.lastName || a.student?.last_name || ''}`,
+            studentName: `${a.student?.firstName || ''} ${a.student?.lastName || ''}`,
             studentEmail: a.student?.email || '',
-            studentPhoto: a.student?.profile_photo || a.student?.profilePhoto || a.student?.photo || '',
+            studentPhoto: a.student?.profile_photo || a.student?.photo || '',
             offerTitle: a.offer_title || a.offer || '',
             matchingScore: a.matchingScore || a.matching_score || 0,
             status: a.status,
-            appliedAt: a.applicationDate || a.application_date || a.applied_at || '',
+            internshipStatus: a.internship?.status || null,
+            internshipId: a.internship?.id || a.internshipId || null,
+            startDate: a.internship?.startDate || a.internship?.start_date || '',
+            endDate: a.internship?.endDate || a.internship?.end_date || '',
+            appliedAt: a.applicationDate || a.applied_at || '',
             skills: a.student?.skills || [],
-            githubLink: a.student?.githubLink || a.student?.github_link || '',
-            portfolioLink: a.student?.portfolioLink || a.student?.portfolio_link || '',
-            cv: a.student?.cv || a.student?.resume || a.student?.cv_url || a.student?.cv_file || ''
+            githubLink: a.student?.githubLink || '',
+            portfolioLink: a.student?.portfolioLink || '',
+            cv: a.student?.cv || a.student?.cv_url || a.student?.cvFile || '',
           }));
           setApplications(mapped.sort((a: any, b: any) => b.matchingScore - a.matchingScore));
+
+          const interns = mapped
+            .filter((a: any) => a.status === 'VALIDATED' || a.internshipStatus === 'ONGOING')
+            .map((a: any) => ({
+              id: a.internshipId || a.id,
+              studentName: a.studentName,
+              studentEmail: a.studentEmail,
+              studentPhoto: a.studentPhoto,
+              offerTitle: a.offerTitle,
+              startDate: a.startDate || '',
+              endDate: a.endDate || '',
+              status: a.internshipStatus || a.status,
+            }));
+          setActiveInterns(interns);
         }
         if (offersRes.status === 'fulfilled') {
           const data = Array.isArray(offersRes.value.data) ? offersRes.value.data : (offersRes.value.data?.offers || []);
           setOffers(data.slice(0, 3));
         }
-
-        const internsRes = await api.get('/api/company/active-interns/');
-        if (internsRes.status === 200) {
-          const data = Array.isArray(internsRes.data) ? internsRes.data : (internsRes.data?.interns || []);
-          setActiveInterns(data.map((i: any) => ({
-            id: i.id,
-            studentName: `${i.student?.firstName || i.student?.first_name || ''} ${i.student?.lastName || i.student?.last_name || ''}`,
-            studentEmail: i.student?.email || '',
-            studentPhoto: i.student?.profile_photo || i.student?.photo || '',
-            offerTitle: i.offer?.title || '',
-            startDate: i.start_date || i.startDate || '',
-            endDate: i.end_date || i.endDate || '',
-            status: i.status
-          })));
-        }
-
       } catch (err) {
         console.error('Error fetching dashboard data:', err);
         toast.error('Failed to load dashboard data. Please check your connection.');
@@ -678,9 +680,9 @@ const CompanyDashboard = () => {
                 <div className="space-y-4">
                   <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-black/30">Technical Expertise</p>
                   <div className="flex flex-wrap gap-2.5">
-                    {reviewModal.app.skills.map((skill: string) => (
-                      <span key={skill} className="px-5 py-2.5 bg-paper rounded-[1rem] text-[11px] font-bold text-black/60 uppercase tracking-widest border border-gray-100">
-                        {skill}
+                    {reviewModal.app.skills.map((skill: any, si: number) => (
+                      <span key={si} className="px-5 py-2.5 bg-paper rounded-[1rem] text-[11px] font-bold text-black/60 uppercase tracking-widest border border-gray-100">
+                        {typeof skill === 'object' ? skill.skillName || skill.name : skill}
                       </span>
                     ))}
                   </div>

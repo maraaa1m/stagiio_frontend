@@ -18,7 +18,7 @@ import {
   ExternalLink
 } from 'lucide-react';
 import { useNavigate, Link } from 'react-router-dom';
-import api from '../api';
+import api from '@/api';
 import { toast, Toaster } from 'sonner';
 import { ALGERIA_WILAYAS, OFFER_TYPES, SORT_OPTIONS } from '../constants';
 

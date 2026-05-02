@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-export const api = axios.create({
+const api = axios.create({
   baseURL: '/',
 });
 
@@ -18,23 +18,34 @@ api.interceptors.response.use(
   (response) => response,
   async (error) => {
     const originalRequest = error.config;
+    
+    // If we get a 401 and haven't tried to refresh yet
     if (error.response?.status === 401 && !originalRequest._retry) {
       originalRequest._retry = true;
       const refreshToken = localStorage.getItem('refresh_token');
+      
       if (refreshToken) {
         try {
-          const response = await axios.post('/api/token/refresh/', { refresh: refreshToken });
+          // Token Refresh Rule
+          const response = await axios.post('/api/auth/token/refresh/', { refresh: refreshToken });
           const { access } = response.data;
+          
           localStorage.setItem('access_token', access);
           originalRequest.headers.Authorization = `Bearer ${access}`;
           return api(originalRequest);
         } catch (err) {
-          // Refresh token expired, logout
+          // Refresh token expired or invalid
           localStorage.clear();
           window.location.href = '/login';
+          return Promise.reject(err);
         }
+      } else {
+        // No refresh token available, session expired
+        localStorage.clear();
+        window.location.href = '/login';
       }
     }
+    
     return Promise.reject(error);
   }
 );

@@ -8,7 +8,7 @@ import {
   LogOut
 } from 'lucide-react';
 import { useNavigate, Link, useLocation } from 'react-router-dom';
-import api from '../api';
+import api from '@/api';
 
 interface StudentSidebarProps {
   unreadNotifications?: number;

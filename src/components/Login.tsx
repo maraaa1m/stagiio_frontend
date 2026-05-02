@@ -22,40 +22,47 @@ const Login = () => {
     setError('');
 
     try {
-      // Try with email as username which is common in Django custom user models
+      // Step 1: The Login Payload Rule (Fixes 400 errors)
+      // SimpleJWT requires 'username' key even if using email
       const response = await api.post('/api/auth/login/', {
-        email: formData.email,
+        username: formData.email,
         password: formData.password
       });
       
       const access = response.data.access || response.data.access_token || response.data.token;
       const refresh = response.data.refresh || response.data.refresh_token;
-      let role = response.data.role;
       
       if (!access) {
         throw new Error('No access token received from server');
       }
 
+      // Step 4: JWT State Management Rule
       localStorage.setItem('access_token', access);
       if (refresh) localStorage.setItem('refresh_token', refresh);
       
-      // Try to get role from token if not in response body
-      if (!role) {
-        try {
-          const decoded: any = jwtDecode(access);
-          role = decoded.role || decoded.user_role || decoded.groups?.[0];
-        } catch (e) {
-          console.error('Failed to decode token:', e);
-        }
+      let role = response.data.role;
+      let deptId = response.data.department_id || response.data.department;
+      
+      // Secondary extraction from JWT decoded body
+      try {
+        const decoded: any = jwtDecode(access);
+        role = role || decoded.role || decoded.user_role || decoded.groups?.[0];
+        deptId = deptId || decoded.department_id || decoded.department;
+        
+        if (role) localStorage.setItem('user_role', role);
+        if (deptId) localStorage.setItem('department_id', deptId.toString());
+      } catch (e) {
+        console.error('Failed to decode token:', e);
       }
 
-      if (role) localStorage.setItem('user_role', role);
-      
+      // Routing logic
       if (role === 'STUDENT') navigate('/student/dashboard');
       else if (role === 'COMPANY') navigate('/company/dashboard');
-      else if (role === 'ADMIN') navigate('/admin/dashboard');
+      else if (role === 'ADMIN') {
+        // If deptId is null, it unlocks Superadmin/Dean Mode
+        navigate('/admin/dashboard');
+      }
       else {
-        // Default based on some logic or just dashboard
         navigate('/student/dashboard');
       }
       
@@ -195,3 +202,4 @@ const Login = () => {
 };
 
 export default Login;
+

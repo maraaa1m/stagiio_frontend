@@ -114,16 +114,17 @@ const Register = () => {
     setIsLoading(true);
     setError('');
 
-    // Map frontend fields to backend expected fields
+    // Step 2: Institutional Hierarchy Rule
+    // IDs must be sent as integers, not strings or text names
     const payload = {
       firstName: studentData.firstName,
       lastName: studentData.lastName,
       email: studentData.email,
       password: studentData.password,
       phoneNumber: studentData.phoneNumber,
-      university: studentData.universityId, // primary key ID
-      faculty: studentData.facultyId,       // primary key ID
-      department: studentData.departmentId, // primary key ID
+      university: parseInt(studentData.universityId),
+      faculty: parseInt(studentData.facultyId),
+      department: parseInt(studentData.departmentId),
       univWillaya: studentData.univWillaya,
       university_wilaya: studentData.univWillaya,
       univ_willaya: studentData.univWillaya,

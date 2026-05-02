@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { motion } from 'motion/react';
 import { Lock, Eye, EyeOff, ArrowRight, Loader2, CheckCircle2 } from 'lucide-react';
 import { Link, useParams, useNavigate } from 'react-router-dom';
-import api from '../api';
+import api from '@/api';
 
 const ResetPassword = () => {
   const { uid, token }          = useParams<{ uid: string; token: string }>();

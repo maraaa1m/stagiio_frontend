@@ -75,9 +75,13 @@ const AdminStudentDetail = () => {
           skills: studentObj.skills || [],
           applications: s.applications || []
         });
-      } catch (err) {
+      } catch (err: any) {
         console.error('Error fetching student:', err);
-        toast.error('Failed to load student details.');
+        if (err?.response?.status === 404) {
+          toast.error('Student details endpoint not available on backend yet.');
+        } else {
+          toast.error('Failed to load student details.');
+        }
         navigate('/admin/students');
       } finally {
         setIsLoading(false);
@@ -239,9 +243,9 @@ const AdminStudentDetail = () => {
                 <h4 className="text-sm font-bold uppercase tracking-widest text-black/20">Technical Skills</h4>
                 <div className="flex flex-wrap gap-2">
                   {student.skills?.length > 0 ? (
-                    student.skills.map((skill) => (
-                      <span key={skill.id} className="px-4 py-2 bg-paper text-black rounded-full text-[11px] font-bold border border-gray-100">
-                        {skill.skillName}
+                    student.skills.map((skill, si) => (
+                      <span key={si} className="px-4 py-2 bg-paper text-black rounded-full text-[11px] font-bold border border-gray-100">
+                        {typeof skill === 'object' ? (skill as any).skillName || (skill as any).name : skill}
                       </span>
                     ))
                   ) : (

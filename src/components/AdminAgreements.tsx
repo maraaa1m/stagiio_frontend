@@ -28,7 +28,15 @@ const AdminAgreements = () => {
       setIsLoading(true);
       try {
         const res = await api.get('/api/admin/agreements/');
-        setAgreements(Array.isArray(res.data) ? res.data : []);
+        const data = Array.isArray(res.data) ? res.data : (res.data?.results || []);
+        setAgreements(data.map((a: any) => ({
+          id: a.id,
+          student: a.studentName || `${a.student?.firstName || ''} ${a.student?.lastName || ''}`.trim() || '—',
+          company: a.companyName || a.company?.companyName || '—',
+          offer: a.offerTitle || a.offer?.title || '—',
+          generatedOn: a.validatedAt || a.created_at || a.generatedOn || '—',
+          pdfUrl: a.pdfUrl || a.pdf_url || a.url || null
+        })));
       } catch {
         toast.error('Failed to load agreements.');
       } finally {

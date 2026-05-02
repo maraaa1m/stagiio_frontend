@@ -22,17 +22,17 @@ import api from '@/api';
 import { toast, Toaster } from 'sonner';
 
 interface Stats {
-  total_students: number;
-  placed_students: number;
-  unplaced_students: number;
-  total_companies: number;
-  pending_companies: number;
-  total_offers: number;
-  total_applications: number;
-  pending_applications: number;
-  accepted_applications: number;
-  validated_applications: number;
-  refused_applications: number;
+  total_students?: number;
+  placed_students?: number;
+  unplaced_students?: number;
+  total_companies?: number;
+  pending_companies?: number;
+  total_offers?: number;
+  total_applications?: number;
+  pending_applications?: number;
+  accepted_applications?: number;
+  validated_applications?: number;
+  refused_applications?: number;
 }
 
 const StatCard = ({
@@ -95,7 +95,20 @@ const AdminStatistics = () => {
       setIsLoading(true);
       try {
         const res = await api.get('/api/admin/statistics/');
-        setStats(res.data);
+        const d = res.data;
+        setStats({
+          total_students: d.total_students || d.totalStudents || 0,
+          placed_students: d.placed_students || d.placedStudents || 0,
+          unplaced_students: d.unplaced_students || d.unplacedStudents || 0,
+          total_companies: d.total_companies || d.totalCompanies || 0,
+          pending_companies: d.pending_companies || d.pendingCompanies || 0,
+          total_offers: d.total_offers || d.totalOffers || 0,
+          total_applications: d.total_applications || d.totalApplications || 0,
+          pending_applications: d.pending_applications || d.pendingApplications || d.pending_validations || 0,
+          accepted_applications: d.accepted_applications || d.acceptedApplications || 0,
+          validated_applications: d.validated_applications || d.validatedApplications || 0,
+          refused_applications: d.refused_applications || d.refusedApplications || 0,
+        });
       } catch {
         toast.error('Failed to load statistics.');
       } finally {
@@ -110,8 +123,8 @@ const AdminStatistics = () => {
     navigate('/login');
   };
 
-  const placementRate = stats && stats.total_students > 0
-    ? Math.round((stats.placed_students / stats.total_students) * 100)
+  const placementRate = stats && (stats.total_students ?? 0) > 0
+    ? Math.round(((stats.placed_students ?? 0) / (stats.total_students ?? 1)) * 100)
     : 0;
 
   return (
@@ -209,18 +222,18 @@ const AdminStatistics = () => {
                     <div>
                       <h3 className="text-3xl font-display font-bold tracking-tight mb-2">Student Placement Rate</h3>
                       <p className="text-white/50 font-medium">
-                        {stats.placed_students} out of {stats.total_students} students have validated internships.
+                        {(stats.placed_students ?? 0)} out of {(stats.total_students ?? 0)} students have validated internships.
                       </p>
                     </div>
                     <div className="flex gap-6">
                       <div>
                         <p className="text-[10px] font-bold uppercase tracking-widest text-white/30 mb-1">Placed</p>
-                        <p className="text-2xl font-display font-bold text-green-400">{stats.placed_students}</p>
+                        <p className="text-2xl font-display font-bold text-green-400">{(stats.placed_students ?? 0)}</p>
                       </div>
                       <div className="w-px bg-white/10" />
                       <div>
                         <p className="text-[10px] font-bold uppercase tracking-widest text-white/30 mb-1">Unplaced</p>
-                        <p className="text-2xl font-display font-bold text-orange-400">{stats.unplaced_students}</p>
+                        <p className="text-2xl font-display font-bold text-orange-400">{(stats.unplaced_students ?? 0)}</p>
                       </div>
                     </div>
                   </div>
@@ -229,10 +242,10 @@ const AdminStatistics = () => {
 
               {/* Stat cards */}
               <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
-                <StatCard label="Total Students"   value={stats.total_students}   icon={<Users size={20} />}       color="text-blue-600"   bg="bg-blue-50"   delay={0.05} />
-                <StatCard label="Active Companies" value={stats.total_companies}  icon={<Building2 size={20} />}   color="text-purple-500" bg="bg-purple-50" delay={0.1}  />
-                <StatCard label="Total Offers"     value={stats.total_offers}     icon={<Briefcase size={20} />}   color="text-navy-900"   bg="bg-paper"     delay={0.15} />
-                <StatCard label="Total Applications" value={stats.total_applications} icon={<FileText size={20} />} color="text-teal-600" bg="bg-teal-50"   delay={0.2}  />
+                <StatCard label="Total Students"   value={stats.total_students ?? 0}   icon={<Users size={20} />}       color="text-blue-600"   bg="bg-blue-50"   delay={0.05} />
+                <StatCard label="Active Companies" value={stats.total_companies ?? 0}  icon={<Building2 size={20} />}   color="text-purple-500" bg="bg-purple-50" delay={0.1}  />
+                <StatCard label="Total Offers"     value={stats.total_offers ?? 0}     icon={<Briefcase size={20} />}   color="text-navy-900"   bg="bg-paper"     delay={0.15} />
+                <StatCard label="Total Applications" value={stats.total_applications ?? 0} icon={<FileText size={20} />} color="text-teal-600" bg="bg-teal-50"   delay={0.2}  />
               </div>
 
               {/* Two panels */}
@@ -245,19 +258,19 @@ const AdminStatistics = () => {
                     <TrendingUp size={20} className="text-blue-600" />
                   </div>
                   <div className="space-y-6">
-                    <Bar label="Pending"   value={stats.pending_applications}   max={stats.total_applications} color="bg-orange-400" />
-                    <Bar label="Accepted"  value={stats.accepted_applications}  max={stats.total_applications} color="bg-blue-500"   />
-                    <Bar label="Validated" value={stats.validated_applications} max={stats.total_applications} color="bg-green-500"  />
-                    <Bar label="Refused"   value={stats.refused_applications}   max={stats.total_applications} color="bg-red-400"    />
+                    <Bar label="Pending"   value={stats.pending_applications ?? 0}   max={stats.total_applications ?? 0} color="bg-orange-400" />
+                    <Bar label="Accepted"  value={stats.accepted_applications ?? 0}  max={stats.total_applications ?? 0} color="bg-blue-500"   />
+                    <Bar label="Validated" value={stats.validated_applications ?? 0} max={stats.total_applications ?? 0} color="bg-green-500"  />
+                    <Bar label="Refused"   value={stats.refused_applications ?? 0}   max={stats.total_applications ?? 0} color="bg-red-400"    />
                   </div>
 
                   {/* Mini legend */}
                   <div className="grid grid-cols-2 gap-4 pt-6 border-t border-gray-50">
                     {[
-                      { label: 'Pending',   value: stats.pending_applications,   color: 'bg-orange-400', icon: <Clock size={12} /> },
-                      { label: 'Accepted',  value: stats.accepted_applications,  color: 'bg-blue-500',   icon: <CheckCircle2 size={12} /> },
-                      { label: 'Validated', value: stats.validated_applications, color: 'bg-green-500',  icon: <FileText size={12} /> },
-                      { label: 'Refused',   value: stats.refused_applications,   color: 'bg-red-400',    icon: <XCircle size={12} /> },
+                      { label: 'Pending',   value: stats.pending_applications ?? 0,   color: 'bg-orange-400', icon: <Clock size={12} /> },
+                      { label: 'Accepted',  value: stats.accepted_applications ?? 0,  color: 'bg-blue-500',   icon: <CheckCircle2 size={12} /> },
+                      { label: 'Validated', value: stats.validated_applications ?? 0, color: 'bg-green-500',  icon: <FileText size={12} /> },
+                      { label: 'Refused',   value: stats.refused_applications ?? 0,   color: 'bg-red-400',    icon: <XCircle size={12} /> },
                     ].map(item => (
                       <div key={item.label} className="flex items-center gap-3">
                         <div className={`w-2 h-2 rounded-full ${item.color} shrink-0`} />
@@ -286,21 +299,21 @@ const AdminStatistics = () => {
                       },
                       {
                         label: 'Companies Awaiting Approval',
-                        value: String(stats.pending_companies),
+                        value: String(stats.pending_companies ?? 0),
                         sub:   'Require admin review',
-                        color: stats.pending_companies > 0 ? 'text-orange-500' : 'text-green-600',
-                        bg:    stats.pending_companies > 0 ? 'bg-orange-50 border-orange-100' : 'bg-green-50 border-green-100',
+                        color: (stats.pending_companies ?? 0) > 0 ? 'text-orange-500' : 'text-green-600',
+                        bg:    (stats.pending_companies ?? 0) > 0 ? 'bg-orange-50 border-orange-100' : 'bg-green-50 border-green-100',
                       },
                       {
                         label: 'Pending Applications',
-                        value: String(stats.pending_applications),
+                        value: String(stats.pending_applications ?? 0),
                         sub:   'Awaiting company review',
-                        color: stats.pending_applications > 10 ? 'text-orange-500' : 'text-blue-600',
-                        bg:    stats.pending_applications > 10 ? 'bg-orange-50 border-orange-100' : 'bg-blue-50 border-blue-100',
+                        color: (stats.pending_applications ?? 0) > 10 ? 'text-orange-500' : 'text-blue-600',
+                        bg:    (stats.pending_applications ?? 0) > 10 ? 'bg-orange-50 border-orange-100' : 'bg-blue-50 border-blue-100',
                       },
                       {
                         label: 'Validated Internships',
-                        value: String(stats.validated_applications),
+                        value: String(stats.validated_applications ?? 0),
                         sub:   'Agreements generated',
                         color: 'text-green-600',
                         bg:    'bg-green-50 border-green-100',
