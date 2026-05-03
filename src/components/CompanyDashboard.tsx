@@ -51,10 +51,10 @@ interface Application {
 interface CompanyOffer {
   id: number;
   title: string;
-  wilaya: string;
+  willaya: string;
   type: string;
   applicantCount: number;
-  deadline: string;
+  applicationDeadline: string;
 }
 
 interface ActiveIntern {
@@ -142,7 +142,15 @@ const CompanyDashboard = () => {
         }
         if (offersRes.status === 'fulfilled') {
           const data = Array.isArray(offersRes.value.data) ? offersRes.value.data : (offersRes.value.data?.offers || []);
-          setOffers(data.slice(0, 3));
+          const mapped = data.map((o: any) => ({
+            id: o.id,
+            title: o.title,
+            willaya: o.willaya || o.wilaya,
+            type: o.type,
+            applicantCount: o.applicantCount || o.applicant_count || 0,
+            applicationDeadline: o.applicationDeadline || o.deadline
+          }));
+          setOffers(mapped.slice(0, 3));
         }
       } catch (err) {
         console.error('Error fetching dashboard data:', err);
@@ -262,7 +270,7 @@ const CompanyDashboard = () => {
           <div className="bg-white/5 rounded-[2rem] p-5 mb-6 border border-white/5">
             <div className="flex items-center gap-4 mb-4">
               <div className="w-12 h-12 rounded-2xl bg-blue-600 flex items-center justify-center font-bold text-lg shadow-lg shadow-blue-600/20">
-                {profile?.companyName?.[0] || 'C'}
+                {(profile?.companyName?.[0] || 'C').toUpperCase()}
               </div>
               <div className="overflow-hidden">
                 <p className="font-bold text-sm truncate leading-tight">{profile?.companyName}</p>
@@ -305,7 +313,7 @@ const CompanyDashboard = () => {
                 <span className="absolute top-2.5 right-2.5 w-2.5 h-2.5 bg-blue-600 rounded-full border-2 border-white" />
               </Link>
               <div className="w-12 h-12 rounded-2xl bg-black text-white flex items-center justify-center font-bold text-sm shadow-xl shadow-black/10">
-                {profile?.companyName?.[0] || 'C'}
+                {(profile?.companyName?.[0] || 'C').toUpperCase()}
               </div>
             </div>
           </div>
@@ -382,11 +390,12 @@ const CompanyDashboard = () => {
                 ) : (
                   activeInterns.map((intern, i) => {
                     const today = new Date();
-                    today.setHours(0, 0, 0, 0); // Reset time for accurate comparison
+                    // Set both dates to noon to avoid day-off-by-one errors from timezones
+                    today.setHours(12, 0, 0, 0); 
                     
                     const endDateStr = intern.endDate || '';
                     const endDate = endDateStr ? new Date(endDateStr) : null;
-                    if (endDate) endDate.setHours(0, 0, 0, 0);
+                    if (endDate) endDate.setHours(12, 0, 0, 0);
                     
                     const isFinished = endDate ? today >= endDate : false;
 
@@ -402,14 +411,14 @@ const CompanyDashboard = () => {
                           <div className="flex items-center gap-5">
                             <div className="w-14 h-14 rounded-2xl bg-black overflow-hidden flex items-center justify-center text-white font-bold text-xl">
                               {intern.studentPhoto ? (
-                                <img src={intern.studentPhoto} alt={intern.studentName} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                                <img src={intern.studentPhoto} alt={intern.studentName || 'Student'} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
                               ) : (
-                                intern.studentName[0]
+                                (intern.studentName?.[0] ?? '?').toUpperCase()
                               )}
                             </div>
                             <div>
-                              <h4 className="text-lg font-display font-bold text-black leading-tight mb-1">{intern.studentName}</h4>
-                              <p className="text-[11px] font-bold uppercase tracking-widest text-black/30">{intern.offerTitle}</p>
+                              <h4 className="text-lg font-display font-bold text-black leading-tight mb-1">{intern.studentName || 'Student'}</h4>
+                              <p className="text-[11px] font-bold uppercase tracking-widest text-black/30">{intern.offerTitle || 'Internship'}</p>
                             </div>
                           </div>
 
@@ -483,7 +492,7 @@ const CompanyDashboard = () => {
                             {app.studentPhoto ? (
                               <img src={app.studentPhoto} alt={app.studentName} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
                             ) : (
-                              app.studentName[0]
+                              (app.studentName?.[0] ?? '?').toUpperCase()
                             )}
                           </div>
                           <div>
@@ -555,14 +564,14 @@ const CompanyDashboard = () => {
                       <div className="flex items-center gap-5 mb-8">
                         <div className="flex items-center gap-2 text-navy-900/30">
                           <MapPin size={14} />
-                          <span className="text-[11px] font-bold uppercase tracking-widest">{offer.wilaya}</span>
+                          <span className="text-[11px] font-bold uppercase tracking-widest">{offer.willaya}</span>
                         </div>
                       </div>
 
                       <div className="flex items-center justify-between pt-6 border-t border-gray-50">
                         <div className="flex items-center gap-2.5 text-orange-500">
                           <Clock size={16} />
-                          <span className="text-[10px] font-bold uppercase tracking-widest">Ends {offer.deadline}</span>
+                          <span className="text-[10px] font-bold uppercase tracking-widest">Ends {offer.applicationDeadline}</span>
                         </div>
                         <Link to={`/company/offers/${offer.id}`} className="w-10 h-10 bg-paper rounded-xl text-navy-900 hover:bg-blue-600 hover:text-white transition-all flex items-center justify-center shadow-sm">
                           <ChevronRight size={18} />
@@ -661,7 +670,7 @@ const CompanyDashboard = () => {
                     {reviewModal.app.studentPhoto ? (
                       <img src={reviewModal.app.studentPhoto} alt={reviewModal.app.studentName} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
                     ) : (
-                      reviewModal.app.studentName[0]
+                      (reviewModal.app.studentName?.[0] ?? '?').toUpperCase()
                     )}
                   </div>
                   <div>

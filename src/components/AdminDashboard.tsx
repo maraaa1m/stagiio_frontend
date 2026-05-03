@@ -84,16 +84,6 @@ const AdminDashboard = () => {
     company: null
   });
 
-  const [validationModal, setValidationModal] = useState<{ isOpen: boolean; agreement: PendingAgreement | null }>({
-    isOpen: false,
-    agreement: null
-  });
-  const [validationData, setValidationData] = useState({
-    startDate: '',
-    endDate: '',
-    topic: '',
-    supervisorName: ''
-  });
   const [adminDept, setAdminDept] = useState<string | null>(null);
   const [isSuperAdmin, setIsSuperAdmin] = useState(false);
 
@@ -483,7 +473,7 @@ const AdminDashboard = () => {
                         <div className="flex items-center justify-between gap-6">
                           <div className="flex items-center gap-5">
                             <div className="w-14 h-14 rounded-2xl bg-paper text-black flex items-center justify-center font-bold text-xl">
-                              {company.companyName[0]}
+                              {(company.companyName?.[0] ?? '?').toUpperCase()}
                             </div>
                             <div>
                               <h4 className="text-lg font-display font-bold text-black leading-tight mb-1">{company.companyName}</h4>
@@ -559,7 +549,7 @@ const AdminDashboard = () => {
                                 {agreement.studentPhoto ? (
                                   <img src={agreement.studentPhoto} alt={agreement.student} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
                                 ) : (
-                                  agreement.student[0]
+                                  (agreement.student?.[0] ?? '?').toUpperCase()
                                 )}
                               </div>
                               <div>
@@ -635,7 +625,7 @@ const AdminDashboard = () => {
                             {cert.studentPhoto ? (
                               <img src={cert.studentPhoto} alt={cert.studentName} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
                             ) : (
-                              cert.studentName[0]
+                              (cert.studentName?.[0] ?? '?').toUpperCase()
                             )}
                           </div>
                           <div>

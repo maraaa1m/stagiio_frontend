@@ -359,7 +359,7 @@ const AdminStudents = () => {
                         />
                       ) : (
                         <div className="text-white font-bold text-xl uppercase">
-                          {student.firstName[0]}{student.lastName[0]}
+                          {(student.firstName?.[0] ?? '?')}{(student.lastName?.[0] ?? '')}
                         </div>
                       )}
                     </div>

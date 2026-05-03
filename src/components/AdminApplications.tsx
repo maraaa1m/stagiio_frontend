@@ -425,7 +425,7 @@ const AdminApplications = () => {
                           />
                         ) : (
                           <div className="text-black/20 font-bold text-xl uppercase">
-                            {app.student.firstName[0]}{app.student.lastName[0]}
+                            {(app.student.firstName?.[0] ?? '?')}{(app.student.lastName?.[0] ?? '')}
                           </div>
                         )}
                       </div>

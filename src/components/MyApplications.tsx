@@ -219,7 +219,7 @@ const MyApplications = () => {
                   <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-8">
                     <div className="flex items-center gap-6">
                       <div className="w-16 h-16 rounded-2xl bg-navy-900 text-white flex items-center justify-center font-bold text-2xl shadow-xl shadow-navy-900/10 group-hover:bg-blue-600 transition-colors duration-500">
-                        {app.company[0]}
+                        {(app.company?.[0] ?? '?').toUpperCase()}
                       </div>
                       <div>
                         <h4 className="text-xl font-display font-bold text-navy-900 leading-tight mb-1 group-hover:text-blue-600 transition-colors">{app.offerTitle}</h4>

@@ -156,7 +156,7 @@ const AdminAgreements = () => {
                   <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-6">
                     <div className="flex items-center gap-5">
                       <div className="w-14 h-14 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center font-bold text-xl">
-                        {ag.student[0]}
+                        {(ag.student?.[0] ?? '?').toUpperCase()}
                       </div>
                       <div>
                         <div className="flex items-center gap-2 mb-1">

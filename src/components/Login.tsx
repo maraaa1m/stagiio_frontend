@@ -63,7 +63,10 @@ const Login = () => {
         navigate('/admin/dashboard');
       }
       else {
-        navigate('/student/dashboard');
+        // Fallback for security - if role is not identified, don't just send to student dashboard
+        console.error('Invalid user role detected:', role);
+        setError('Your account profile is incomplete or has an invalid role. Please contact support.');
+        localStorage.clear();
       }
       
     } catch (err: any) {

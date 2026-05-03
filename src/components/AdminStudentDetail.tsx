@@ -126,7 +126,7 @@ const AdminStudentDetail = () => {
                 {student.photoUrl ? (
                   <img src={student.photoUrl} alt="Photo" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
                 ) : (
-                  student.firstName[0]
+                  (student.firstName?.[0] ?? '?').toUpperCase()
                 )}
               </div>
               <h3 className="text-2xl font-display font-bold text-black">{student.firstName} {student.lastName}</h3>

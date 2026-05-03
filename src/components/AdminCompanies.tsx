@@ -2,11 +2,12 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import {
   LayoutDashboard, Building2, ClipboardList, BarChart3, LogOut, Bell,
-  CheckCircle2, X, Loader2, MapPin, Globe, Phone, ShieldX, Search, Users,
+  CheckCircle2, X, Loader2, MapPin, Globe, Phone, ShieldX, Search, Users, FileText,
 } from 'lucide-react';
 import { useNavigate, Link } from 'react-router-dom';
 import api from '@/api';
 import { toast, Toaster } from 'sonner';
+import { jwtDecode } from 'jwt-decode';
 
 interface Company {
   id: number;
@@ -26,6 +27,21 @@ const AdminCompanies = () => {
   const [isActionLoading, setIsActionLoading] = useState<number | null>(null);
   const [search, setSearch]                 = useState('');
   const [activeTab, setActiveTab]           = useState<'APPROVED' | 'BLACKLISTED'>('APPROVED');
+  const [isSuperAdmin, setIsSuperAdmin] = useState(false);
+
+  useEffect(() => {
+    const token = localStorage.getItem('access_token');
+    const storedDeptId = localStorage.getItem('department_id');
+    if (token) {
+      try {
+        const decoded: any = jwtDecode(token);
+        const dept = storedDeptId || decoded.department_id || decoded.department;
+        setIsSuperAdmin(!dept || dept === 'DEAN' || dept === 'null');
+      } catch (e) {
+        setIsSuperAdmin(true);
+      }
+    }
+  }, []);
 
   const fetchData = async () => {
     setIsLoading(true);
@@ -84,17 +100,19 @@ const AdminCompanies = () => {
           <Link to="/admin/dashboard" className="flex items-center gap-4 px-4 py-3.5 text-white/40 hover:text-white hover:bg-white/5 rounded-2xl text-[13px] font-bold tracking-wide transition-all group">
             <LayoutDashboard size={18} className="group-hover:scale-110 transition-transform" />Dashboard
           </Link>
-          <Link to="/admin/companies" className="flex items-center gap-4 px-4 py-3.5 bg-blue-600 rounded-2xl text-[13px] font-bold tracking-wide transition-all shadow-lg shadow-blue-600/20 group">
-            <Building2 size={18} className="group-hover:scale-110 transition-transform" />Companies
-          </Link>
+          {isSuperAdmin && (
+            <Link to="/admin/companies" className="flex items-center gap-4 px-4 py-3.5 bg-blue-600 rounded-2xl text-[13px] font-bold tracking-wide transition-all shadow-lg shadow-blue-600/20 group">
+              <Building2 size={18} className="group-hover:scale-110 transition-transform" />Companies
+            </Link>
+          )}
           <Link to="/admin/students" className="flex items-center gap-4 px-4 py-3.5 text-white/40 hover:text-white hover:bg-white/5 rounded-2xl text-[13px] font-bold tracking-wide transition-all group">
-            <Users size={18} className="group-hover:scale-110 transition-transform" />Students
+            <Users size={18} className="group-hover:scale-110 transition-transform" />Student Directory
           </Link>
           <Link to="/admin/applications" className="flex items-center gap-4 px-4 py-3.5 text-white/40 hover:text-white hover:bg-white/5 rounded-2xl text-[13px] font-bold tracking-wide transition-all group">
-            <ClipboardList size={18} className="group-hover:scale-110 transition-transform" />Applications
+            <ClipboardList size={18} className="group-hover:scale-110 transition-transform" />Student Applications
           </Link>
           <Link to="/admin/agreements" className="flex items-center gap-4 px-4 py-3.5 text-white/40 hover:text-white hover:bg-white/5 rounded-2xl text-[13px] font-bold tracking-wide transition-all group">
-            <ClipboardList size={18} className="group-hover:scale-110 transition-transform" />Agreements
+            <FileText size={18} className="group-hover:scale-110 transition-transform" />Agreements
           </Link>
           <Link to="/admin/statistics" className="flex items-center gap-4 px-4 py-3.5 text-white/40 hover:text-white hover:bg-white/5 rounded-2xl text-[13px] font-bold tracking-wide transition-all group">
             <BarChart3 size={18} className="group-hover:scale-110 transition-transform" />Statistics
@@ -150,7 +168,7 @@ const AdminCompanies = () => {
                   <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-6">
                     <div className="flex items-center gap-5">
                       <div className="w-14 h-14 rounded-2xl bg-navy-900 text-white flex items-center justify-center font-bold text-xl shadow-xl shadow-navy-900/10 group-hover:bg-blue-600 transition-colors duration-500">
-                        {company.companyName[0]}
+                        {(company.companyName?.[0] ?? '?').toUpperCase()}
                       </div>
                       <div>
                         <h4 className="text-lg font-display font-bold text-navy-900 mb-1">{company.companyName}</h4>

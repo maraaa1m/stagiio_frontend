@@ -292,7 +292,7 @@ const CompanyApplications = () => {
                         {app.student.photo ? (
                           <img src={app.student.photo} alt={app.student.firstName} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
                         ) : (
-                          app.student.firstName[0]
+                          (app.student.firstName?.[0] ?? '?').toUpperCase()
                         )}
                       </div>
                       <div>
@@ -446,7 +446,7 @@ const CompanyApplications = () => {
                     {reviewModal.app.student.photo ? (
                       <img src={reviewModal.app.student.photo} alt={reviewModal.app.student.firstName} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
                     ) : (
-                      reviewModal.app.student.firstName[0]
+                      (reviewModal.app.student.firstName?.[0] ?? '?').toUpperCase()
                     )}
                   </div>
                   <div>

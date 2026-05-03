@@ -26,11 +26,12 @@ interface OfferDetailData {
   title: string;
   company: string;
   description: string;
-  wilaya: string;
+  willaya: string;
   type: string;
   skills: string[];
-  deadline: string;
-  startDate: string;
+  applicationDeadline: string;
+  internshipStartDate: string;
+  internshipEndDate: string;
   remainingSpots: number;
 }
 
@@ -83,11 +84,12 @@ const OfferDetail = () => {
           title: offerData.title,
           company: offerData.company || offerData.companyName || offerData.company_name,
           description: offerData.description,
-          wilaya: offerData.wilaya || offerData.willaya,
+          willaya: offerData.willaya || offerData.wilaya,
           type: offerData.type,
           skills: skillsArray,
-          deadline: offerData.deadline || offerData.applicationDeadline,
-          startDate: offerData.startDate || offerData.internshipStartDate || offerData.start_date,
+          applicationDeadline: offerData.applicationDeadline || offerData.deadline,
+          internshipStartDate: offerData.internshipStartDate || offerData.startDate || offerData.start_date,
+          internshipEndDate: offerData.internshipEndDate || '',
           remainingSpots: offerData.remainingSpots !== undefined ? offerData.remainingSpots : (offerData.remaining_spots || 0)
         });
 
@@ -185,16 +187,16 @@ const OfferDetail = () => {
           <div className="flex flex-col md:flex-row items-start justify-between gap-8">
             <div className="flex items-center gap-8">
               <div className="w-24 h-24 rounded-[2rem] bg-navy-900 text-white flex items-center justify-center font-bold text-4xl shadow-2xl shadow-navy-900/20">
-                {offer.company[0]}
+                {(offer.company?.[0] ?? '?').toUpperCase()}
               </div>
               <div>
                 <h1 className="text-4xl font-display font-bold text-navy-900 tracking-tight mb-2">{offer.title}</h1>
                 <div className="flex items-center gap-3">
-                  <span className="text-lg font-bold text-blue-600">{offer.company}</span>
+                  <span className="text-lg font-bold text-blue-600">{offer.company || 'Unknown Company'}</span>
                   <div className="w-1.5 h-1.5 rounded-full bg-gray-200" />
                   <div className="flex items-center gap-2 text-navy-900/40 font-bold uppercase tracking-widest text-[10px]">
                     <MapPin size={14} />
-                    {offer.wilaya}
+                    {offer.willaya}
                   </div>
                 </div>
               </div>
@@ -206,7 +208,7 @@ const OfferDetail = () => {
               </div>
               <div className="px-5 py-2.5 bg-orange-50 text-orange-600 rounded-2xl text-[11px] font-bold uppercase tracking-widest border border-orange-100/30 flex items-center gap-2">
                 <Clock size={14} />
-                Ends {offer.deadline}
+                Ends {offer.applicationDeadline}
               </div>
             </div>
           </div>

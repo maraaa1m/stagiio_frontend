@@ -25,7 +25,7 @@ import { ALGERIA_WILAYAS, OFFER_TYPES, SORT_OPTIONS } from '../constants';
 interface Offer {
   id: number;
   title: string;
-  companyName: string;
+  company: string; // Changed from companyName to company to match mapping and usage
   willaya: string;
   type: string;
   skills: string[];
@@ -47,6 +47,23 @@ const SearchOffers = () => {
   const [selectedType, setSelectedType] = useState('ALL');
   const [sortBy, setSortBy] = useState('match');
   const [isApplying, setIsApplying] = useState<number | null>(null);
+
+  useEffect(() => {
+    const fetchProfile = async () => {
+      try {
+        const response = await api.get('/api/student/profile/');
+        const pData = response.data;
+        setProfile({
+          firstName: pData.firstName || pData.first_name,
+          lastName: pData.lastName || pData.last_name,
+          photoUrl: pData.profile_photo || pData.photoUrl || pData.photo || ''
+        });
+      } catch (err) {
+        console.error('Error fetching profile:', err);
+      }
+    };
+    fetchProfile();
+  }, []);
 
   const fetchOffers = async () => {
     setIsLoading(true);
@@ -232,11 +249,11 @@ const SearchOffers = () => {
                   <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-8">
                     <div className="flex items-center gap-6">
                       <div className="w-16 h-16 rounded-2xl bg-navy-900 text-white flex items-center justify-center font-bold text-2xl shadow-xl shadow-navy-900/10 group-hover:bg-blue-600 transition-colors duration-500">
-                        {offer.companyName[0]}
+                        {(offer.company?.[0] ?? '?').toUpperCase()}
                       </div>
                       <div>
                         <h4 className="text-xl font-display font-bold text-navy-900 leading-tight mb-1 group-hover:text-blue-600 transition-colors">{offer.title}</h4>
-                        <p className="text-[11px] font-bold uppercase tracking-widest text-navy-900/30">{offer.companyName}</p>
+                        <p className="text-[11px] font-bold uppercase tracking-widest text-navy-900/30">{offer.company}</p>
                         {offer.remainingSpots !== undefined && (
                           <div className={`mt-2 inline-flex px-2 py-1 rounded-lg text-[9px] font-bold uppercase tracking-widest ${offer.remainingSpots > 0 ? 'bg-green-50 text-green-600' : 'bg-red-50 text-red-500'}`}>
                             {offer.remainingSpots} {offer.remainingSpots === 1 ? 'Spot' : 'Spots'} Left
@@ -256,7 +273,7 @@ const SearchOffers = () => {
                     </div>
 
                     <div className="flex-1 flex flex-wrap gap-2">
-                      {offer.skills.slice(0, 4).map(skill => (
+                      {(offer.skills || []).slice(0, 4).map(skill => (
                         <span key={skill} className="px-3 py-1.5 bg-paper rounded-lg text-[10px] font-bold text-navy-900/40 uppercase tracking-widest">
                           {skill}
                         </span>
