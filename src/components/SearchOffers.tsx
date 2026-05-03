@@ -93,22 +93,8 @@ const SearchOffers = () => {
   };
 
   useEffect(() => {
-    const fetchProfile = async () => {
-      try {
-        const res = await api.get('/api/student/profile/');
-        const pData = res.data;
-        setProfile({
-          firstName: pData.firstName || pData.first_name,
-          lastName: pData.lastName || pData.last_name,
-          photoUrl: pData.profile_photo || pData.profilePhoto || pData.photoUrl || pData.photo_url || pData.photo || ''
-        });
-      } catch (err) {
-        console.error('Error fetching profile in SearchOffers:', err);
-      }
-    };
-    fetchProfile();
     fetchOffers();
-  }, [selectedWilaya, selectedType, sortBy]);
+  }, [selectedWilaya, selectedType, sortBy, searchQuery]);
 
   const handleApply = async (offerId: number) => {
     setIsApplying(offerId);

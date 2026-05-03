@@ -29,6 +29,8 @@ const ProfileSetup = () => {
   const [error, setError] = useState('');
   const navigate = useNavigate();
 
+  const [skillSearch, setSkillSearch] = useState('');
+
   useEffect(() => {
     const fetchSkills = async () => {
       try {
@@ -141,18 +143,32 @@ const ProfileSetup = () => {
 
           <form onSubmit={handleSubmit} className="space-y-10">
             {/* Skills Section */}
-            <div className="space-y-4">
-              <label className="text-[11px] font-bold uppercase tracking-widest text-navy-900/40 ml-4">
-                Your Technical Skills <span className="text-red-500">*</span>
-              </label>
-              <div className="flex flex-wrap gap-3 p-2">
+            <div className="space-y-6">
+              <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 ml-4">
+                <label className="text-[11px] font-bold uppercase tracking-widest text-navy-900/40">
+                  Your Technical Skills <span className="text-red-500">*</span>
+                </label>
+                <div className="relative w-full md:w-64">
+                  <input 
+                    type="text"
+                    placeholder="Search skills..."
+                    value={skillSearch}
+                    onChange={(e) => setSkillSearch(e.target.value)}
+                    className="w-full px-4 py-2 bg-paper border border-gray-100 rounded-xl text-xs outline-none focus:border-blue-600/30 transition-all font-medium"
+                  />
+                </div>
+              </div>
+
+              <div className="flex flex-wrap gap-3 p-2 max-h-60 overflow-y-auto custom-scrollbar">
                 {isFetching ? (
                   <div className="flex items-center gap-2 text-navy-900/30 py-4">
                     <Loader2 size={16} className="animate-spin" />
                     <span className="text-xs font-bold uppercase tracking-widest">Loading skills...</span>
                   </div>
                 ) : (
-                  Array.isArray(availableSkills) && availableSkills.map((skill) => {
+                  Array.isArray(availableSkills) && availableSkills
+                    .filter(s => s.skillName.toLowerCase().includes(skillSearch.toLowerCase()))
+                    .map((skill) => {
                     const isSelected = selectedSkills.includes(skill.id);
                     return (
                       <button
@@ -172,6 +188,11 @@ const ProfileSetup = () => {
                       </button>
                     );
                   })
+                )}
+                {!isFetching && availableSkills.filter(s => s.skillName.toLowerCase().includes(skillSearch.toLowerCase())).length === 0 && (
+                  <div className="w-full text-center py-6 text-navy-900/20 font-bold uppercase tracking-widest text-[10px]">
+                    No matching skills found
+                  </div>
                 )}
               </div>
             </div>

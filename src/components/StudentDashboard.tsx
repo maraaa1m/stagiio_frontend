@@ -353,7 +353,7 @@ const StudentDashboard = () => {
               <p className="text-[11px] font-bold uppercase tracking-widest text-black/30 mt-1">Last chance to apply for these opportunities</p>
             </div>
             
-            <div className="flex gap-8 overflow-x-auto pb-8 no-scrollbar -mx-2 px-2">
+            <div className="flex gap-8 overflow-x-auto pb-8 custom-scrollbar scroll-smooth -mx-2 px-2 relative group-hover/scroll:opacity-100 transition-opacity">
               {isLoading ? (
                 Array(3).fill(0).map((_, i) => (
                   <div key={i} className="min-w-[340px] h-48 bg-white rounded-[2.5rem] border border-gray-100 animate-pulse" />

@@ -253,269 +253,228 @@ const AdminApplications = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#FBFAF7] flex font-sans text-stone-900 selection:bg-blue-100 selection:text-blue-700">
-      <style>{`
-        .bg-paper { background-color: #F3F0E9; }
-        .text-sage-700 { color: #5B6E5B; }
-        .bg-sage-50 { background-color: #F1F4EE; }
-        .bg-sage-400 { background-color: #D1DBC8; }
-        .border-sage-200 { border-color: #E2E8DC; }
-        .text-clay-700 { color: #8B6B61; }
-        .bg-clay-50 { background-color: #F4EEEC; }
-        .border-clay-200 { border-color: #E8D7D0; }
-        .shadow-soft { box-shadow: 0 4px 20px -4px rgba(0,0,0,0.05); }
-        .shadow-bento { box-shadow: 0 10px 30px -5px rgba(115, 115, 115, 0.08); }
-        .font-display { font-family: 'Inter', sans-serif; }
-      `}</style>
+    <div className="min-h-screen bg-[#F8FAFC] flex font-sans text-black selection:bg-blue-600/10 selection:text-blue-600">
       <Toaster position="top-right" richColors />
 
-      {/* Human-Centric Sidebar */}
-      <aside className="fixed left-0 top-0 bottom-0 w-72 bg-white/50 backdrop-blur-xl border-r border-[#E8E4DB] flex flex-col z-50">
+      {/* Sidebar */}
+      <aside className="fixed left-0 top-0 bottom-0 w-72 bg-[#060D1F] text-white flex flex-col z-50 border-r border-white/5">
         <div className="p-10">
-          <Link to="/" className="flex items-center gap-3 transition-transform hover:scale-105">
-            <div className="w-3 h-3 rounded-full bg-blue-500 ring-8 ring-blue-50"></div>
-            <span className="font-display font-bold text-2xl tracking-tighter text-stone-900">Stag<span className="text-blue-500 italic">.io</span></span>
+          <Link to="/" className="flex items-center gap-2.5 group">
+            <div className="w-3 h-3 rounded-full bg-blue-600 group-hover:scale-125 transition-transform duration-500"></div>
+            <span className="font-bold text-2xl tracking-tighter">Stag<span className="text-blue-600">.io</span></span>
           </Link>
         </div>
 
-        <nav className="flex-1 px-6 space-y-2">
-          <div className="pb-6 px-4">
-            <p className="text-[10px] font-black uppercase tracking-[0.3em] text-stone-300">Management</p>
+        <nav className="flex-1 px-6 space-y-1.5">
+          <div className="pb-4 px-4">
+            <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-white/20">Main Menu</p>
           </div>
           
-          {[
-            { to: '/admin/dashboard', icon: <LayoutDashboard size={18} />, label: 'Overview' },
-            { to: '/admin/companies', icon: <Building2 size={18} />, label: 'Partner Hub' },
-            { to: '/admin/students', icon: <Users size={18} />, label: 'Talent Pool' },
-            { to: '/admin/applications', icon: <ClipboardList size={18} />, label: 'Applications', active: true },
-            { to: '/admin/agreements', icon: <FileText size={18} />, label: 'Legal Vault' },
-          ].map((item) => (
-            <Link 
-              key={item.label}
-              to={item.to} 
-              className={`flex items-center gap-4 px-5 py-4 rounded-[2rem] text-[13px] font-bold tracking-tight transition-all group ${
-                item.active 
-                ? 'bg-blue-600 text-white shadow-xl shadow-blue-600/20' 
-                : 'text-stone-400 hover:text-stone-900 hover:bg-[#F3F0E9]'
-              }`}
-            >
-              <span className="group-hover:scale-110 transition-transform">{item.icon}</span>
-              {item.label}
-            </Link>
-          ))}
+          <Link to="/admin/dashboard" className="flex items-center gap-4 px-4 py-3.5 text-white/40 hover:text-white hover:bg-white/5 rounded-2xl text-[13px] font-bold tracking-wide transition-all group">
+            <LayoutDashboard size={18} className="group-hover:scale-110 transition-transform" />
+            Dashboard
+          </Link>
+          <Link to="/admin/companies" className="flex items-center gap-4 px-4 py-3.5 text-white/40 hover:text-white hover:bg-white/5 rounded-2xl text-[13px] font-bold tracking-wide transition-all group">
+            <Building2 size={18} className="group-hover:scale-110 transition-transform" />
+            Companies
+          </Link>
+          <Link to="/admin/students" className="flex items-center gap-4 px-4 py-3.5 text-white/40 hover:text-white hover:bg-white/5 rounded-2xl text-[13px] font-bold tracking-wide transition-all group">
+            <Users size={18} className="group-hover:scale-110 transition-transform" />
+            Student Directory
+          </Link>
+          <Link to="/admin/applications" className="flex items-center gap-4 px-4 py-3.5 bg-blue-600 rounded-2xl text-[13px] font-bold tracking-wide transition-all shadow-lg shadow-blue-600/20 group">
+            <ClipboardList size={18} className="group-hover:scale-110 transition-transform" />
+            Student Applications
+          </Link>
+          <Link to="/admin/agreements" className="flex items-center gap-4 px-4 py-3.5 text-white/40 hover:text-white hover:bg-white/5 rounded-2xl text-[13px] font-bold tracking-wide transition-all group">
+            <FileText size={18} className="group-hover:scale-110 transition-transform" />
+            Agreements
+          </Link>
+          <Link to="/admin/statistics" className="flex items-center gap-4 px-4 py-3.5 text-white/40 hover:text-white hover:bg-white/5 rounded-2xl text-[13px] font-bold tracking-wide transition-all group">
+            <BarChart3 size={18} className="group-hover:scale-110 transition-transform" />
+            Statistics
+          </Link>
         </nav>
 
-        <div className="p-8 border-t border-[#E8E4DB]">
+        <div className="p-8 border-t border-white/5">
           <button 
             onClick={handleSignOut}
-            className="w-full flex items-center justify-center gap-3 py-4 bg-paper hover:bg-stone-200 rounded-[2rem] text-[11px] font-black uppercase tracking-widest transition-all text-stone-500 hover:text-stone-900 border border-transparent hover:border-stone-300"
+            className="w-full flex items-center justify-center gap-3 py-3.5 bg-white/5 hover:bg-red-500/10 hover:text-red-500 rounded-2xl text-[10px] font-bold uppercase tracking-widest transition-all border border-white/5"
           >
             <LogOut size={16} />
-            Security Exit
+            Sign Out
           </button>
         </div>
       </aside>
 
-      {/* Main Experience */}
-      <main className="flex-1 ml-72 min-h-screen flex flex-col">
-        <header className="h-28 bg-[#FBFAF7]/80 backdrop-blur-xl flex items-center justify-between px-12 sticky top-0 z-40">
-          <div className="flex flex-col">
-            <h2 className="text-3xl font-display font-bold text-stone-900 tracking-tighter">Student Journeys</h2>
-            <div className="flex items-center gap-3 mt-1.5">
-              <span className="text-[10px] font-black uppercase tracking-widest text-[#B4ADA3]">Curation Engine</span>
-              {adminDept && (
-                <div className="flex items-center gap-2 px-3 py-1 bg-paper rounded-full border border-[#E8E4DB]">
-                  <div className={`w-1.5 h-1.5 rounded-full ${getDeptColor(adminDept)}`} />
-                  <span className="text-[9px] font-black uppercase tracking-widest text-stone-500">
-                    {adminDept === 'DEAN' ? 'University Dean' : `${adminDept} Department`}
-                  </span>
-                </div>
-              )}
-            </div>
+      {/* Main Content */}
+      <main className="flex-1 ml-72 min-h-screen">
+        <header className="h-24 bg-white/80 backdrop-blur-xl border-b border-gray-100 flex items-center justify-between px-12 sticky top-0 z-40">
+          <div>
+            <h2 className="text-2xl font-display font-bold text-black tracking-tight">Student Applications</h2>
+            <p className="text-[11px] font-bold uppercase tracking-widest text-black/30 mt-1">Review and manage internship requests</p>
           </div>
           
           <div className="flex items-center gap-6">
+            {/* Department Indicator */}
+            {adminDept && (
+              <div className="flex items-center gap-3 px-4 py-2 bg-paper border border-gray-100 rounded-2xl shadow-sm">
+                <div className={`w-2 h-2 rounded-full ${adminDept === 'TLSI' ? 'bg-emerald-500' : adminDept === 'IFA' ? 'bg-blue-500' : adminDept === 'MI' ? 'bg-amber-500' : 'bg-gray-400'} shadow-[0_0_10px_rgba(0,0,0,0.1)]`} />
+                <span className="text-[10px] font-bold uppercase tracking-widest text-black/60">
+                  {adminDept === 'DEAN' ? 'Dean Office' : `${adminDept} Department`}
+                </span>
+              </div>
+            )}
             <div className="relative group w-96">
-              <div className="absolute left-6 top-1/2 -translate-y-1/2 text-stone-300 group-focus-within:text-blue-500 transition-colors">
+              <div className="absolute left-5 top-1/2 -translate-y-1/2 text-black/30 group-focus-within:text-blue-600 transition-colors">
                 <Search size={18} />
               </div>
               <input 
                 type="text"
-                placeholder="Lookup student, company or role..."
+                placeholder="Search students, companies..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full bg-white border border-[#E8E4DB] rounded-[2rem] py-4 pl-16 pr-8 outline-none focus:border-blue-500/20 focus:ring-8 focus:ring-blue-500/5 transition-all font-medium text-stone-900 shadow-soft"
+                className="w-full bg-paper border border-gray-100 rounded-2xl py-3.5 pl-14 pr-6 outline-none focus:border-blue-600/30 focus:ring-4 focus:ring-blue-600/5 transition-all font-medium text-black"
               />
             </div>
+            <button className="relative p-3 bg-paper rounded-2xl text-black/40 hover:text-blue-600 hover:bg-blue-50 transition-all border border-gray-100">
+              <Bell size={20} />
+            </button>
           </div>
         </header>
 
-        <div className="p-12 space-y-10 flex-1">
-          {/* Bento Filter & Stats */}
-          <div className="grid grid-cols-12 gap-6">
-            <div className="col-span-12 lg:col-span-8 bg-paper p-2.5 rounded-[3rem] border border-[#E8E4DB] flex items-center gap-2 w-fit overflow-x-auto">
+        <div className="p-12 space-y-10">
+          {/* Filter Bar */}
+          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+            <div className="flex items-center gap-3 p-1.5 bg-paper rounded-2xl w-fit border border-gray-100 overflow-x-auto">
               {[
-                { id: 'ALL', label: 'Overview', icon: <ClipboardList size={14} /> },
-                { id: 'PENDING', label: 'Action Required', icon: <Clock size={14} /> },
-                { id: 'ACCEPTED', label: 'Approved', icon: <CheckCircle2 size={14} /> },
-                { id: 'PENDING_CERT', label: 'Pending Cert', icon: <FileText size={14} /> },
-                { id: 'COMPLETED', label: 'Completed', icon: <CheckCircle2 size={14} /> },
-                { id: 'REFUSED', label: 'Archived', icon: <XCircle size={14} /> }
+                { id: 'ALL', label: 'All Applications' },
+                { id: 'PENDING', label: 'Actions' },
+                { id: 'ACCEPTED', label: 'Validated' },
+                { id: 'PENDING_CERT', label: 'Pending Cert' },
+                { id: 'COMPLETED', label: 'Completed' },
+                { id: 'REFUSED', label: 'Archived' }
               ].map((tab) => (
                 <button 
                   key={tab.id}
                   onClick={() => setStatusFilter(tab.id as any)}
-                  className={`px-8 py-3.5 rounded-[2.5rem] text-[11px] font-black uppercase tracking-[0.1em] transition-all flex items-center gap-2.5 shrink-0 ${
+                  className={`px-6 py-2.5 rounded-xl text-[11px] font-bold uppercase tracking-widest transition-all whitespace-nowrap ${
                     statusFilter === tab.id 
-                    ? 'bg-white text-stone-900 shadow-bento border border-white' 
-                    : 'text-stone-400 hover:text-stone-600'
+                    ? 'bg-black text-white shadow-lg' 
+                    : 'text-black/40 hover:text-black'
                   }`}
                 >
-                  {tab.icon}
                   {tab.label}
                 </button>
               ))}
             </div>
             
-            <div className="col-span-12 lg:col-span-4 bg-blue-50 p-6 rounded-[3rem] border border-blue-100 flex items-center justify-between">
-              <div className="space-y-1">
-                <p className="text-[10px] font-black uppercase tracking-widest text-blue-400">Total Pipeline</p>
-                <div className="flex items-baseline gap-2">
-                  <p className="text-3xl font-display font-bold text-blue-700">{filteredApplications.length}</p>
-                  <p className="text-xs font-bold text-blue-400">active</p>
-                </div>
+            <div className="bg-blue-50 px-6 py-3 rounded-2xl border border-blue-100 flex items-center gap-4">
+              <div className="flex flex-col">
+                <span className="text-[9px] font-bold uppercase tracking-[0.2em] text-blue-400">Total Entries</span>
+                <span className="text-xl font-display font-bold text-blue-700">{filteredApplications.length}</span>
               </div>
-              <div className="w-12 h-12 rounded-2xl bg-white shadow-soft flex items-center justify-center text-blue-600">
-                <BarChart3 size={24} />
+              <div className="w-10 h-10 rounded-xl bg-white shadow-sm flex items-center justify-center text-blue-600">
+                <BarChart3 size={20} />
               </div>
             </div>
           </div>
 
           {isLoading ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {Array(6).fill(0).map((_, i) => (
-                <div key={i} className="h-64 bg-white rounded-[3.5rem] border border-[#E8E4DB] animate-pulse" />
+            <div className="space-y-4">
+              {Array(4).fill(0).map((_, i) => (
+                <div key={i} className="h-32 bg-white rounded-[2.5rem] border border-gray-100 animate-pulse" />
               ))}
             </div>
           ) : filteredApplications.length === 0 ? (
-            <div className="bg-white p-32 rounded-[4rem] border border-[#E8E4DB] text-center border-dashed">
-              <div className="w-24 h-24 bg-paper rounded-[3rem] shadow-soft flex items-center justify-center mx-auto mb-8 text-stone-200">
-                <ClipboardList size={48} />
+            <div className="bg-white p-20 rounded-[3rem] border border-gray-100 text-center border-dashed border-2">
+              <div className="w-20 h-20 bg-paper rounded-[2rem] flex items-center justify-center mx-auto mb-6 text-black/10">
+                <ClipboardList size={40} />
               </div>
-              <h4 className="text-2xl font-display font-bold text-stone-900 mb-2">Workspace Empty</h4>
-              <p className="text-stone-400 font-medium max-w-sm mx-auto">No student applications match your current refinement.</p>
+              <h4 className="text-xl font-display font-bold text-black mb-2">Workspace Empty</h4>
+              <p className="text-black/40 font-medium max-w-sm mx-auto">No applications match your current filters.</p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8">
+            <div className="space-y-4">
               {filteredApplications.map((app, i) => {
                 const status = getStatusInfo(app.status);
                 return (
                   <motion.div
                     key={app.id}
-                    initial={{ opacity: 0, y: 30 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: i * 0.05, duration: 0.6 }}
-                    className="bg-white p-8 rounded-[3.5rem] border border-[#E8E4DB] shadow-soft hover:shadow-bento hover:border-blue-500/10 transition-all group relative overflow-hidden"
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: i * 0.05 }}
+                    className="bg-white p-6 rounded-[2.5rem] border border-gray-100 shadow-sm hover:shadow-premium transition-all group flex flex-col lg:flex-row lg:items-center justify-between gap-6"
                   >
-                    {/* Status Glow Overlay */}
-                    <div className={`absolute top-0 right-0 w-32 h-32 blur-[80px] opacity-20 -mr-16 -mt-16 transition-colors ${
-                      app.status === 'ACCEPTED' ? 'bg-sage-400' : app.status === 'PENDING' ? 'bg-amber-400' : 'bg-clay-400'
-                    }`} />
-                    
-                    <div className="relative z-10 flex flex-col h-full">
-                      <div className="flex items-start justify-between mb-8">
-                        <div className="w-16 h-16 rounded-[2.2rem] bg-paper overflow-hidden border border-[#E8E4DB] transition-transform group-hover:scale-110 flex-shrink-0">
-                          {app.student.photo ? (
-                            <img 
-                              src={app.student.photo} 
-                              alt={app.student.firstName} 
-                              className="w-full h-full object-cover"
-                              referrerPolicy="no-referrer"
-                            />
-                          ) : (
-                            <div className="w-full h-full flex items-center justify-center text-stone-400 font-bold text-xl uppercase">
-                              {app.student.firstName[0]}{app.student.lastName[0]}
-                            </div>
-                          )}
-                        </div>
-                        <div className={`px-4 py-2 rounded-2xl text-[10px] font-black uppercase tracking-widest border transition-colors ${status.color}`}>
-                          {status.label}
-                        </div>
+                    <div className="flex items-center gap-6">
+                      <div className="w-16 h-16 rounded-[1.5rem] bg-paper overflow-hidden border border-gray-100 shrink-0 flex items-center justify-center transition-transform group-hover:scale-110">
+                        {app.student.photo ? (
+                          <img 
+                            src={app.student.photo} 
+                            alt={app.student.firstName} 
+                            className="w-full h-full object-cover"
+                            referrerPolicy="no-referrer"
+                          />
+                        ) : (
+                          <div className="text-black/20 font-bold text-xl uppercase">
+                            {app.student.firstName[0]}{app.student.lastName[0]}
+                          </div>
+                        )}
                       </div>
-
-                      <div className="mb-6">
-                        <div className="flex items-center gap-2 mb-1">
-                          <h4 className="text-xl font-display font-bold text-stone-900 truncate">
+                      <div>
+                        <div className="flex items-center gap-3">
+                          <h4 className="text-lg font-display font-bold text-black leading-tight group-hover:text-blue-600 transition-colors">
                             {app.student.firstName} {app.student.lastName}
                           </h4>
-                          <div className={`w-2 h-2 rounded-full ${getDeptColor(app.student.department)} shadow-sm`} />
+                          <span className={`px-2.5 py-1 rounded-lg text-[9px] font-bold uppercase tracking-widest border ${
+                             app.student.department?.toUpperCase() === 'TLSI' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' :
+                             app.student.department?.toUpperCase() === 'IFA' ? 'bg-blue-50 text-blue-600 border-blue-100' :
+                             'bg-gray-50 text-gray-400 border-gray-100'
+                          }`}>
+                            {app.student.department || 'DEPT'}
+                          </span>
                         </div>
-                        <p className="text-[12px] font-bold text-stone-400 uppercase tracking-widest">
-                          {app.student.department} Student
+                        <p className="text-[11px] font-bold text-black/40 mt-1 uppercase tracking-widest">
+                          {app.offer.title} <span className="mx-1.5 opacity-30">•</span> <span className="text-blue-600">@ {app.offer.companyName}</span>
                         </p>
                       </div>
+                    </div>
 
-                      <div className="p-6 bg-paper rounded-[2.5rem] border border-[#E8E4DB] mb-8 grow">
-                        <div className="flex items-center gap-3 mb-3">
-                          <div className="w-8 h-8 rounded-xl bg-white shadow-soft flex items-center justify-center text-blue-500">
-                            <Briefcase size={16} />
-                          </div>
-                          <span className="text-[11px] font-black uppercase tracking-widest text-stone-900/60">Position Details</span>
-                        </div>
-                        <h5 className="font-bold text-stone-900 leading-tight mb-1">{app.offer.title}</h5>
-                        <p className="text-sm font-medium text-blue-600">@ {app.offer.companyName}</p>
-                        
-                        <div className="mt-4 pt-4 border-t border-[#E8E4DB]/50 flex items-center justify-between">
-                          <span className="text-[10px] font-black uppercase tracking-widest text-stone-400">Score</span>
-                          <span className="text-lg font-display font-bold text-stone-900">{app.matchingScore}%</span>
-                        </div>
+                    <div className="flex items-center gap-6">
+                      <div className="hidden sm:flex flex-col items-end">
+                        <span className="text-[10px] font-bold text-black/30 uppercase tracking-widest mb-1">Matching</span>
+                        <span className="text-lg font-display font-bold text-black">{app.matchingScore}%</span>
                       </div>
 
-                      <div className="flex items-center gap-3">
-                        <a 
-                          href={app.student.cvLink || '#'}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="p-4 bg-white text-stone-400 rounded-3xl hover:bg-stone-900 hover:text-white transition-all shadow-soft border border-[#E8E4DB] flex-1 flex items-center justify-center gap-2 group"
-                        >
-                          <FileText size={18} className="group-hover:rotate-12 transition-transform" />
-                          <span className="text-[11px] font-black uppercase tracking-widest">Portfolio</span>
-                        </a>
-                        {(app.status === 'ACCEPTED') && (
+                      <div className={`px-4 py-2 rounded-xl text-[10px] font-bold uppercase tracking-widest border ${status.color}`}>
+                        {status.label}
+                      </div>
+
+                      <div className="flex items-center gap-2">
+                        {app.status === 'ACCEPTED' && (
                           <button 
                             onClick={() => handleAutoValidate(app)}
                             disabled={isActionLoading === app.id}
-                            className="p-4 bg-blue-600 text-white rounded-3xl hover:bg-stone-900 transition-all shadow-xl shadow-blue-600/20 flex-1 flex items-center justify-center gap-2 disabled:opacity-50"
+                            className="p-3 bg-blue-600 text-white rounded-xl hover:bg-black transition-all shadow-lg shadow-blue-600/10 disabled:opacity-50"
+                            title="Validate Agreement"
                           >
-                            {isActionLoading === app.id ? (
-                              <Loader2 size={16} className="animate-spin" />
-                            ) : (
-                              <>
-                                <CheckCircle2 size={18} />
-                                <span className="text-[11px] font-black uppercase tracking-widest">Authorize</span>
-                              </>
-                            )}
+                            {isActionLoading === app.id ? <Loader2 size={18} className="animate-spin" /> : <FileText size={18} />}
                           </button>
                         )}
                         {app.status === 'PENDING_CERT' && (
                           <button 
                             onClick={() => handleIssueCertificate(app)}
                             disabled={isActionLoading === app.id}
-                            className="p-4 bg-green-600 text-white rounded-3xl hover:bg-stone-900 transition-all shadow-xl shadow-green-600/20 flex-1 flex items-center justify-center gap-2 disabled:opacity-50"
+                            className="p-3 bg-emerald-600 text-white rounded-xl hover:bg-black transition-all shadow-lg shadow-emerald-600/10 disabled:opacity-50"
+                            title="Issue Certificate"
                           >
-                            {isActionLoading === app.id ? (
-                              <Loader2 size={16} className="animate-spin" />
-                            ) : (
-                              <>
-                                <CheckCircle2 size={18} />
-                                <span className="text-[11px] font-black uppercase tracking-widest">Issue Cert</span>
-                              </>
-                            )}
+                            {isActionLoading === app.id ? <Loader2 size={18} className="animate-spin" /> : <CheckCircle2 size={18} />}
                           </button>
                         )}
                         <Link 
                           to={`/admin/students/${app.student.id}`}
-                          className="p-4 bg-paper text-stone-600 rounded-3xl hover:bg-blue-600 hover:text-white transition-all border border-[#E8E4DB]"
+                          className="p-3 bg-paper text-black/40 rounded-xl hover:bg-blue-600 hover:text-white transition-all border border-gray-100"
+                          title="View Profile"
                         >
                           <ArrowRight size={18} />
                         </Link>

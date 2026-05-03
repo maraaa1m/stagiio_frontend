@@ -54,8 +54,8 @@ const calculateCompletion = (p: any) => {
     p.idCardNumber, p.githubLink, p.portfolioLink,
     p.photoUrl, p.cvUrl
   ];
-  // Count how many of these are NOT empty strings/null/undefined
-  const filledFields = fields.filter(f => f && f !== '').length;
+  // Count how many of these are NOT empty strings/null/undefined AND not "Not Provided"
+  const filledFields = fields.filter(f => f && f !== '' && f !== 'Not Provided').length;
   
   // Also check if skills exist and is a non-empty list
   const hasSkills = Array.isArray(p.skills) && p.skills.length > 0;

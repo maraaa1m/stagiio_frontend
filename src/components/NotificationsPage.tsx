@@ -51,10 +51,10 @@ const NotificationsPage = () => {
     const fetchNotifications = async () => {
       setIsLoading(true);
       try {
-        const res  = await api.get('/api/student/notifications/');
+        const res  = await api.get('/api/notifications/');
         const list = Array.isArray(res.data)
           ? res.data
-          : (res.data?.notifications || []);
+          : (res.data?.notifications || res.data?.results || []);
         setNotifications(list);
       } catch {
         toast.error('Failed to load notifications.');
@@ -72,6 +72,7 @@ const NotificationsPage = () => {
       setNotifications(prev =>
         prev.map(n => n.id === id ? { ...n, is_read: true } : n),
       );
+      window.dispatchEvent(new CustomEvent('notifications-updated'));
     } catch { /* silent */ }
   };
 
@@ -82,6 +83,7 @@ const NotificationsPage = () => {
         unread.map(n => api.put(`/api/notifications/${n.id}/read/`, {}))
       );
       setNotifications(prev => prev.map(n => ({ ...n, is_read: true })));
+      window.dispatchEvent(new CustomEvent('notifications-updated'));
       toast.success('All notifications marked as read.');
     } catch {
       toast.error('Failed to mark notifications as read.');

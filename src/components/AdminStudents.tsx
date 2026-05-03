@@ -18,7 +18,8 @@ import {
   ArrowRight,
   Loader2,
   AlertCircle,
-  CreditCard
+  CreditCard,
+  Download
 } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import api from '@/api';
@@ -145,6 +146,39 @@ const AdminStudents = () => {
     return matchesSearch && matchesStatus;
   });
 
+  const handleExportCSV = () => {
+    if (students.length === 0) {
+      toast.error('No students to export.');
+      return;
+    }
+
+    const headers = ['ID', 'First Name', 'Last Name', 'Email', 'Department', 'Placed'];
+    const rows = filteredStudents.map(s => [
+      s.id,
+      s.firstName,
+      s.lastName,
+      s.email,
+      s.department,
+      s.isPlaced ? 'Yes' : 'No'
+    ]);
+
+    const csvContent = [
+      headers.join(','),
+      ...rows.map(r => r.map(field => `"${String(field).replace(/"/g, '""')}"`).join(','))
+    ].join('\n');
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    link.setAttribute('download', `students_export_${new Date().toISOString().split('T')[0]}.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    toast.success('Student directory exported to CSV.');
+  };
+
   const getDeptStyle = (dept: string) => {
     const d = dept?.toUpperCase();
     if (d === 'TLSI') return 'bg-emerald-50 text-emerald-600 border-emerald-100/50';
@@ -238,6 +272,13 @@ const AdminStudents = () => {
                 className="w-full bg-paper border border-gray-100 rounded-2xl py-3.5 pl-14 pr-6 outline-none focus:border-blue-600/30 focus:ring-4 focus:ring-blue-600/5 transition-all font-medium text-black"
               />
             </div>
+            <button 
+              onClick={handleExportCSV}
+              className="flex items-center gap-2.5 px-6 py-3 bg-paper text-black/60 hover:text-blue-600 hover:bg-blue-50 rounded-2xl text-[11px] font-bold uppercase tracking-widest transition-all border border-gray-100 group"
+            >
+              <Download size={16} className="group-hover:scale-110 transition-transform" />
+              Export
+            </button>
             <button className="relative p-3 bg-paper rounded-2xl text-black/40 hover:text-blue-600 hover:bg-blue-50 transition-all border border-gray-100">
               <Bell size={20} />
             </button>

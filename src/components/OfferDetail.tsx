@@ -100,9 +100,8 @@ const OfferDetail = () => {
         
         const applications = Array.isArray(appsRes.data) ? appsRes.data : (appsRes.data?.applications || appsRes.data?.results || []);
         const alreadyApplied = applications.some((app: any) => {
-          const appOfferId = app.offerId || app.offer_id || app.offer?.id || (app.id && !app.offer ? app.id : null);
-          return (appOfferId && Number(appOfferId) === Number(id)) || 
-                 (app.offerTitle || app.offer_title || app.offer?.title) === offerData.title;
+          const appOfferId = app.offerId || app.offer_id || app.offer?.id;
+          return appOfferId && Number(appOfferId) === Number(id);
         });
         setHasApplied(alreadyApplied);
 

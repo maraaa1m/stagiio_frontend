@@ -20,6 +20,7 @@ import {
 import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import api from '@/api';
+import { toast, Toaster } from 'sonner';
 
 const Navbar = ({ user, handleLogout, getDashboardLink, getProfileLink }: any) => {
   const [isOpen, setIsOpen] = useState(false);
@@ -607,10 +608,7 @@ const ContactSection = () => {
     setTimeout(() => {
       setIsSubmitting(false);
       setFormData({ name: '', email: '', subject: '', message: '' });
-      // In a real app we'd use toast here, but we don't have it imported in LandingPage
-      // LandingPage doesn't have Toaster, let's assume it's global or just use alert for now
-      // Actually we have axios, but let's just show success
-      alert("Message sent successfully! We'll get back to you soon.");
+      toast.success("Message sent successfully! We'll get back to you soon.");
     }, 1500);
   };
 
@@ -792,7 +790,8 @@ export default function LandingPage() {
   };
 
   return (
-    <>
+    <div className="min-h-screen bg-paper font-sans text-navy-900 selection:bg-blue-600/10 selection:text-blue-600">
+      <Toaster position="top-right" richColors />
       <Navbar 
         user={user} 
         handleLogout={handleLogout} 
@@ -808,7 +807,8 @@ export default function LandingPage() {
         <CTA />
       </main>
       <Footer />
-    </>
+    </div>
   );
 }
+
 

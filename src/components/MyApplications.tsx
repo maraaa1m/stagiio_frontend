@@ -267,15 +267,19 @@ const MyApplications = () => {
                       )}
 
                       {app.status === 'REFUSED' && app.refusalReason && (
-                        <div className="group relative">
-                          <div className="p-3 bg-red-50 text-red-500 rounded-xl cursor-help">
+                        <div className="flex items-center">
+                          <button 
+                            onClick={() => {
+                              toast.info('Refusal Reason', {
+                                description: app.refusalReason,
+                                duration: 8000,
+                              });
+                            }}
+                            className="p-3 bg-red-50 text-red-500 rounded-xl hover:bg-red-100 transition-all flex items-center gap-2 group"
+                          >
                             <AlertCircle size={18} />
-                          </div>
-                          <div className="absolute bottom-full right-0 mb-4 w-64 bg-navy-900 text-white p-4 rounded-2xl text-[11px] font-medium leading-relaxed opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none shadow-2xl z-50">
-                            <p className="font-bold uppercase tracking-widest text-[9px] text-white/40 mb-2">Reason for refusal</p>
-                            {app.refusalReason}
-                            <div className="absolute top-full right-4 w-3 h-3 bg-navy-900 transform rotate-45 -translate-y-1.5" />
-                          </div>
+                            <span className="text-[10px] font-bold uppercase tracking-widest hidden md:block">View Reason</span>
+                          </button>
                         </div>
                       )}
                     </div>

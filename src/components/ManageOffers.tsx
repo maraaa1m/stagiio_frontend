@@ -478,24 +478,14 @@ const ManageOffers = () => {
                       </div>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 gap-4">
                       <div className="space-y-2">
                         <label className="text-[10px] font-bold uppercase tracking-widest text-navy-900/30 ml-4">Application Deadline</label>
                         <input 
                           required
                           type="date"
                           value={formData.applicationDeadline}
-                          onChange={(e) => setFormData({...formData, applicationDeadline: e.target.value})}
-                          className="w-full bg-paper border border-gray-100 rounded-2xl py-4 px-6 outline-none focus:border-blue-600/30 focus:ring-4 focus:ring-blue-600/5 transition-all font-medium text-navy-900"
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <label className="text-[10px] font-bold uppercase tracking-widest text-navy-900/30 ml-4">Legacy Deadline (internal)</label>
-                        <input 
-                          required
-                          type="date"
-                          value={formData.deadline}
-                          onChange={(e) => setFormData({...formData, deadline: e.target.value})}
+                          onChange={(e) => setFormData({...formData, applicationDeadline: e.target.value, deadline: e.target.value})}
                           className="w-full bg-paper border border-gray-100 rounded-2xl py-4 px-6 outline-none focus:border-blue-600/30 focus:ring-4 focus:ring-blue-600/5 transition-all font-medium text-navy-900"
                         />
                       </div>
@@ -588,3 +578,4 @@ const ManageOffers = () => {
 };
 
 export default ManageOffers;
+

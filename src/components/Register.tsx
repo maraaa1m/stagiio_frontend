@@ -61,15 +61,21 @@ const Register = () => {
     registreCommerce: null as File | null,
   });
 
+  const [isLoadingUniversities, setIsLoadingUniversities] = useState(false);
+  const [isLoadingFaculties, setIsLoadingFaculties] = useState(false);
+  const [isLoadingDepartments, setIsLoadingDepartments] = useState(false);
+
   React.useEffect(() => {
     const fetchUniversities = async () => {
+      setIsLoadingUniversities(true);
       try {
         const response = await api.get('/api/universities/');
-        // Handle DRF results if present, fallback to raw response data
         const data = response.data.results || response.data;
         setUniversities(Array.isArray(data) ? data : []);
       } catch (err) {
         console.error('Failed to fetch universities:', err);
+      } finally {
+        setIsLoadingUniversities(false);
       }
     };
     fetchUniversities();
@@ -80,13 +86,15 @@ const Register = () => {
     setFaculties([]);
     setDepartments([]);
     if (!univId) return;
+    setIsLoadingFaculties(true);
     try {
-      // Updated to match Technical Integration Spec: GET /api/faculties/${universityId}/
       const response = await api.get(`/api/faculties/${univId}/`);
       const data = response.data.results || response.data;
       setFaculties(Array.isArray(data) ? data : []);
     } catch (err) {
       console.error('Failed to fetch faculties:', err);
+    } finally {
+      setIsLoadingFaculties(false);
     }
   };
 
@@ -94,13 +102,15 @@ const Register = () => {
     setStudentData(prev => ({ ...prev, facultyId: facId, departmentId: '' }));
     setDepartments([]);
     if (!facId) return;
+    setIsLoadingDepartments(true);
     try {
-      // Updated to match Technical Integration Spec: GET /api/departments/${facultyId}/
       const response = await api.get(`/api/departments/${facId}/`);
       const data = response.data.results || response.data;
       setDepartments(Array.isArray(data) ? data : []);
     } catch (err) {
       console.error('Failed to fetch departments:', err);
+    } finally {
+      setIsLoadingDepartments(false);
     }
   };
 
@@ -405,11 +415,12 @@ const Register = () => {
                           required
                           value={studentData.universityId}
                           onChange={(e) => handleUniversityChange(e.target.value)}
-                          className="w-full bg-paper border border-gray-100 rounded-[2rem] py-5 pl-16 pr-12 outline-none focus:border-blue-600/30 focus:ring-8 focus:ring-blue-600/5 transition-all font-medium text-navy-900 appearance-none bg-[url('data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20fill%3D%22none%22%20viewBox%3D%220%200%2020%2020%22%3E%3Cpath%20stroke%3D%22%236B7280%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%20stroke-width%3D%221.5%22%20d%3D%22m6%208%204%204%204-4%22%2F%3E%3C%2Fsvg%3E')] bg-[length:1.5rem_1.5rem] bg-[right_1.25rem_center] bg-no-repeat"
+                          className="w-full bg-paper border border-gray-100 rounded-[2rem] py-5 pl-16 pr-12 outline-none focus:border-blue-600/30 focus:ring-8 focus:ring-blue-600/5 transition-all font-medium text-navy-900 appearance-none bg-[url('data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20fill%3D%22none%22%20viewBox%3D%220%200%2020%2020%22%3E%3Cpath%20stroke%3D%22%236B7280%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%20stroke-width%3D%221.5%22%20d%3D%22m6%208%204%204%204-4%22%2F%3E%3C%2Fsvg%3E')] bg-[length:1.5rem_1.5rem] bg-[right_1.25rem_center] bg-no-repeat disabled:opacity-50"
                         >
-                          <option value="">Select University</option>
+                          <option value="">{isLoadingUniversities ? 'Loading...' : 'Select University'}</option>
                           {universities.map(u => <option key={u.id} value={u.id}>{u.name}</option>)}
                         </select>
+                        {isLoadingUniversities && <Loader2 className="absolute right-12 top-1/2 -translate-y-1/2 w-4 h-4 animate-spin text-blue-600" />}
                       </div>
                     </div>
                   </div>
@@ -423,14 +434,15 @@ const Register = () => {
                         </div>
                         <select 
                           required
-                          disabled={!studentData.universityId}
+                          disabled={!studentData.universityId || isLoadingFaculties}
                           value={studentData.facultyId}
                           onChange={(e) => handleFacultyChange(e.target.value)}
                           className="w-full bg-paper border border-gray-100 rounded-[2rem] py-5 pl-16 pr-12 outline-none focus:border-blue-600/30 focus:ring-8 focus:ring-blue-600/5 transition-all font-medium text-navy-900 appearance-none disabled:opacity-50 bg-[url('data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20fill%3D%22none%22%20viewBox%3D%220%200%2020%2020%22%3E%3Cpath%20stroke%3D%22%236B7280%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%20stroke-width%3D%221.5%22%20d%3D%22m6%208%204%204%204-4%22%2F%3E%3C%2Fsvg%3E')] bg-[length:1.5rem_1.5rem] bg-[right_1.25rem_center] bg-no-repeat"
                         >
-                          <option value="">Select Faculty</option>
+                          <option value="">{isLoadingFaculties ? 'Loading...' : 'Select Faculty'}</option>
                           {faculties.map(f => <option key={f.id} value={f.id}>{f.name}</option>)}
                         </select>
+                        {isLoadingFaculties && <Loader2 className="absolute right-12 top-1/2 -translate-y-1/2 w-4 h-4 animate-spin text-blue-600" />}
                       </div>
                     </div>
 
@@ -442,14 +454,15 @@ const Register = () => {
                         </div>
                         <select 
                           required
-                          disabled={!studentData.facultyId}
+                          disabled={!studentData.facultyId || isLoadingDepartments}
                           value={studentData.departmentId}
                           onChange={(e) => setStudentData({...studentData, departmentId: e.target.value})}
                           className="w-full bg-paper border border-gray-100 rounded-[2rem] py-5 pl-16 pr-12 outline-none focus:border-blue-600/30 focus:ring-8 focus:ring-blue-600/5 transition-all font-medium text-navy-900 appearance-none disabled:opacity-50 bg-[url('data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20fill%3D%22none%22%20viewBox%3D%220%200%2020%2020%22%3E%3Cpath%20stroke%3D%22%236B7280%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%20stroke-width%3D%221.5%22%20d%3D%22m6%208%204%204%204-4%22%2F%3E%3C%2Fsvg%3E')] bg-[length:1.5rem_1.5rem] bg-[right_1.25rem_center] bg-no-repeat"
                         >
-                          <option value="">Select Department</option>
+                          <option value="">{isLoadingDepartments ? 'Loading...' : 'Select Department'}</option>
                           {departments.map(d => <option key={d.id} value={d.id}>{d.name}</option>)}
                         </select>
+                        {isLoadingDepartments && <Loader2 className="absolute right-12 top-1/2 -translate-y-1/2 w-4 h-4 animate-spin text-blue-600" />}
                       </div>
                     </div>
                   </div>

@@ -21,6 +21,12 @@ const StudentSidebar: React.FC<StudentSidebarProps> = ({ unreadNotifications: in
   const [profile, setProfile] = useState<{ firstName: string; lastName: string; photoUrl?: string } | null>(null);
 
   useEffect(() => {
+    if (initialUnreadCount !== undefined) {
+      setUnreadNotifications(initialUnreadCount);
+    }
+  }, [initialUnreadCount]);
+
+  useEffect(() => {
     const fetchData = async () => {
       try {
         const [profileRes, notificationsRes] = await Promise.allSettled([
@@ -46,6 +52,10 @@ const StudentSidebar: React.FC<StudentSidebarProps> = ({ unreadNotifications: in
     };
 
     fetchData();
+
+    // Listen for custom event from NotificationsPage
+    window.addEventListener('notifications-updated', fetchData);
+    return () => window.removeEventListener('notifications-updated', fetchData);
   }, []);
 
   const handleSignOut = () => {

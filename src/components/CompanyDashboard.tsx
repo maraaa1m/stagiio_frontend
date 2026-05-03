@@ -300,10 +300,10 @@ const CompanyDashboard = () => {
             </div>
             
             <div className="flex items-center gap-4">
-              <button className="relative p-3 bg-paper rounded-2xl text-black/40 hover:text-blue-600 hover:bg-blue-50 transition-all border border-gray-100">
+              <Link to="/notifications" className="relative p-3 bg-paper rounded-2xl text-black/40 hover:text-blue-600 hover:bg-blue-50 transition-all border border-gray-100">
                 <Bell size={20} />
                 <span className="absolute top-2.5 right-2.5 w-2.5 h-2.5 bg-blue-600 rounded-full border-2 border-white" />
-              </button>
+              </Link>
               <div className="w-12 h-12 rounded-2xl bg-black text-white flex items-center justify-center font-bold text-sm shadow-xl shadow-black/10">
                 {profile?.companyName?.[0] || 'C'}
               </div>
@@ -382,8 +382,13 @@ const CompanyDashboard = () => {
                 ) : (
                   activeInterns.map((intern, i) => {
                     const today = new Date();
-                    const endDate = new Date(intern.endDate);
-                    const isFinished = today >= endDate;
+                    today.setHours(0, 0, 0, 0); // Reset time for accurate comparison
+                    
+                    const endDateStr = intern.endDate || '';
+                    const endDate = endDateStr ? new Date(endDateStr) : null;
+                    if (endDate) endDate.setHours(0, 0, 0, 0);
+                    
+                    const isFinished = endDate ? today >= endDate : false;
 
                     return (
                       <motion.div 
@@ -397,7 +402,7 @@ const CompanyDashboard = () => {
                           <div className="flex items-center gap-5">
                             <div className="w-14 h-14 rounded-2xl bg-black overflow-hidden flex items-center justify-center text-white font-bold text-xl">
                               {intern.studentPhoto ? (
-                                <img src={intern.studentPhoto} alt={intern.studentName} className="w-full h-full object-cover" />
+                                <img src={intern.studentPhoto} alt={intern.studentName} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
                               ) : (
                                 intern.studentName[0]
                               )}
@@ -476,7 +481,7 @@ const CompanyDashboard = () => {
                         <div className="flex items-center gap-5">
                           <div className="w-14 h-14 rounded-2xl bg-black overflow-hidden flex items-center justify-center text-white font-bold text-xl shadow-xl shadow-black/10 transition-all duration-500">
                             {app.studentPhoto ? (
-                              <img src={app.studentPhoto} alt={app.studentName} className="w-full h-full object-cover" />
+                              <img src={app.studentPhoto} alt={app.studentName} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
                             ) : (
                               app.studentName[0]
                             )}
@@ -654,7 +659,7 @@ const CompanyDashboard = () => {
                 <div className="flex items-center gap-6">
                   <div className="w-16 h-16 rounded-[1.5rem] bg-black overflow-hidden flex items-center justify-center text-white font-bold text-2xl shadow-xl shadow-black/10 transition-all duration-500">
                     {reviewModal.app.studentPhoto ? (
-                      <img src={reviewModal.app.studentPhoto} alt={reviewModal.app.studentName} className="w-full h-full object-cover" />
+                      <img src={reviewModal.app.studentPhoto} alt={reviewModal.app.studentName} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
                     ) : (
                       reviewModal.app.studentName[0]
                     )}

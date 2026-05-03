@@ -290,7 +290,7 @@ const CompanyApplications = () => {
                     <div className="flex items-center gap-6">
                       <div className="w-16 h-16 rounded-2xl bg-black overflow-hidden flex items-center justify-center text-white font-bold text-2xl shadow-xl shadow-black/10 group-hover:scale-105 transition-all duration-500">
                         {app.student.photo ? (
-                          <img src={app.student.photo} alt={app.student.firstName} className="w-full h-full object-cover" />
+                          <img src={app.student.photo} alt={app.student.firstName} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
                         ) : (
                           app.student.firstName[0]
                         )}
@@ -438,13 +438,13 @@ const CompanyApplications = () => {
               initial={{ opacity: 0, scale: 0.9, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.9, y: 20 }}
-              className="relative w-full max-w-2xl bg-white rounded-[3rem] shadow-2xl overflow-hidden flex flex-col"
+              className="relative w-full max-w-2xl bg-white rounded-[3rem] shadow-2xl overflow-hidden flex flex-col max-h-[90vh]"
             >
               <div className="p-10 border-b border-gray-100 flex items-center justify-between shrink-0">
                 <div className="flex items-center gap-6">
                   <div className="w-16 h-16 rounded-[1.5rem] bg-black overflow-hidden flex items-center justify-center text-white font-bold text-2xl shadow-xl shadow-black/10 transition-all duration-500">
                     {reviewModal.app.student.photo ? (
-                      <img src={reviewModal.app.student.photo} alt={reviewModal.app.student.firstName} className="w-full h-full object-cover" />
+                      <img src={reviewModal.app.student.photo} alt={reviewModal.app.student.firstName} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
                     ) : (
                       reviewModal.app.student.firstName[0]
                     )}
