@@ -54,15 +54,21 @@ const AdminApplications = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<'ALL' | 'PENDING' | 'ACCEPTED' | 'REFUSED' | 'PENDING_CERT' | 'COMPLETED'>('ALL');
   const [adminDept, setAdminDept] = useState<string | null>(null);
+  const [isSuperAdmin, setIsSuperAdmin] = useState(false);
 
   useEffect(() => {
     const token = localStorage.getItem('access_token');
+    const storedDeptId = localStorage.getItem('department_id');
     if (token) {
       try {
         const decoded: any = jwtDecode(token);
-        setAdminDept(decoded.department || 'DEAN');
+        const dept = storedDeptId || decoded.department_id || decoded.department;
+        setAdminDept(dept ? dept.toString() : 'DEAN');
+        setIsSuperAdmin(!dept || dept === 'DEAN' || dept === 'null');
       } catch (e) {
         console.error('Error decoding token:', e);
+        setAdminDept('DEAN');
+        setIsSuperAdmin(true);
       }
     }
   }, []);
@@ -274,10 +280,12 @@ const AdminApplications = () => {
             <LayoutDashboard size={18} className="group-hover:scale-110 transition-transform" />
             Dashboard
           </Link>
-          <Link to="/admin/companies" className="flex items-center gap-4 px-4 py-3.5 text-white/40 hover:text-white hover:bg-white/5 rounded-2xl text-[13px] font-bold tracking-wide transition-all group">
-            <Building2 size={18} className="group-hover:scale-110 transition-transform" />
-            Companies
-          </Link>
+          {isSuperAdmin && (
+            <Link to="/admin/companies" className="flex items-center gap-4 px-4 py-3.5 text-white/40 hover:text-white hover:bg-white/5 rounded-2xl text-[13px] font-bold tracking-wide transition-all group">
+              <Building2 size={18} className="group-hover:scale-110 transition-transform" />
+              Companies
+            </Link>
+          )}
           <Link to="/admin/students" className="flex items-center gap-4 px-4 py-3.5 text-white/40 hover:text-white hover:bg-white/5 rounded-2xl text-[13px] font-bold tracking-wide transition-all group">
             <Users size={18} className="group-hover:scale-110 transition-transform" />
             Student Directory

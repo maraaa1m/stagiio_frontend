@@ -25,14 +25,13 @@ import { ALGERIA_WILAYAS, OFFER_TYPES, SORT_OPTIONS } from '../constants';
 interface Offer {
   id: number;
   title: string;
-  company: string;
-  wilaya: string;
+  companyName: string;
+  willaya: string;
   type: string;
   skills: string[];
   matchingScore: number;
-  deadline: string;
+  applicationDeadline: string;
   remainingSpots: number;
-  applicationDate?: string;
 }
 
 import StudentSidebar from './StudentSidebar';
@@ -68,20 +67,20 @@ const SearchOffers = () => {
       const mappedData = data.map((o: any) => ({
         id: o.id,
         title: o.title,
-        companyName: o.company || o.company_name,
-        wilaya: o.willaya || o.wilaya,
+        company: o.company || o.company_name || o.companyName || '?',
+        willaya: o.willaya || o.wilaya,
         type: o.type,
         skills: o.requiredSkills || o.required_skills || [],
         matchingScore: o.matchingScore || o.matching_score || 0,
         remainingSpots: o.remainingSpots !== undefined ? o.remainingSpots : o.remaining_spots,
-        deadline: o.deadline
+        applicationDeadline: o.applicationDeadline || o.deadline
       }));
 
       // Sort data
       let sorted = [...mappedData];
       if (sortBy === 'match') sorted.sort((a, b) => b.matchingScore - a.matchingScore);
       else if (sortBy === 'newest') sorted.sort((a, b) => b.id - a.id);
-      else if (sortBy === 'deadline') sorted.sort((a, b) => new Date(a.deadline).getTime() - new Date(b.deadline).getTime());
+      else if (sortBy === 'deadline') sorted.sort((a, b) => new Date(a.applicationDeadline).getTime() - new Date(b.applicationDeadline).getTime());
 
       setOffers(sorted);
     } catch (err) {
@@ -233,11 +232,11 @@ const SearchOffers = () => {
                   <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-8">
                     <div className="flex items-center gap-6">
                       <div className="w-16 h-16 rounded-2xl bg-navy-900 text-white flex items-center justify-center font-bold text-2xl shadow-xl shadow-navy-900/10 group-hover:bg-blue-600 transition-colors duration-500">
-                        {offer.company[0]}
+                        {offer.companyName[0]}
                       </div>
                       <div>
                         <h4 className="text-xl font-display font-bold text-navy-900 leading-tight mb-1 group-hover:text-blue-600 transition-colors">{offer.title}</h4>
-                        <p className="text-[11px] font-bold uppercase tracking-widest text-navy-900/30">{offer.company}</p>
+                        <p className="text-[11px] font-bold uppercase tracking-widest text-navy-900/30">{offer.companyName}</p>
                         {offer.remainingSpots !== undefined && (
                           <div className={`mt-2 inline-flex px-2 py-1 rounded-lg text-[9px] font-bold uppercase tracking-widest ${offer.remainingSpots > 0 ? 'bg-green-50 text-green-600' : 'bg-red-50 text-red-500'}`}>
                             {offer.remainingSpots} {offer.remainingSpots === 1 ? 'Spot' : 'Spots'} Left
@@ -249,7 +248,7 @@ const SearchOffers = () => {
                     <div className="flex flex-wrap gap-3">
                       <div className="px-4 py-2 bg-paper rounded-xl text-[10px] font-bold uppercase tracking-widest text-navy-900/60 flex items-center gap-2">
                         <MapPin size={12} />
-                        {offer.wilaya}
+                        {offer.willaya}
                       </div>
                       <div className="px-4 py-2 bg-blue-50 rounded-xl text-[10px] font-bold uppercase tracking-widest text-blue-600 border border-blue-100/30">
                         {offer.type}
@@ -273,7 +272,7 @@ const SearchOffers = () => {
                       <div className="space-y-3">
                         <div className="flex items-center gap-2 text-orange-500">
                           <Clock size={14} />
-                          <span className="text-[10px] font-bold uppercase tracking-widest">Ends {offer.deadline}</span>
+                          <span className="text-[10px] font-bold uppercase tracking-widest">Ends {offer.applicationDeadline}</span>
                         </div>
                         <div className="flex gap-2">
                           <button 

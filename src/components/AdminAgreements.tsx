@@ -2,11 +2,12 @@ import React, { useState, useEffect } from 'react';
 import { motion } from 'motion/react';
 import {
   LayoutDashboard, Building2, ClipboardList, BarChart3, LogOut, Bell,
-  FileText, Download, Search, User, Briefcase, Calendar,
+  FileText, Download, Search, User, Briefcase, Calendar, Users,
 } from 'lucide-react';
 import { useNavigate, Link } from 'react-router-dom';
 import api from '@/api';
 import { toast, Toaster } from 'sonner';
+import { jwtDecode } from 'jwt-decode';
 
 interface Agreement {
   id: number;
@@ -22,8 +23,21 @@ const AdminAgreements = () => {
   const [agreements, setAgreements] = useState<Agreement[]>([]);
   const [isLoading, setIsLoading]   = useState(true);
   const [search, setSearch]         = useState('');
+  const [isSuperAdmin, setIsSuperAdmin] = useState(false);
 
   useEffect(() => {
+    const token = localStorage.getItem('access_token');
+    const storedDeptId = localStorage.getItem('department_id');
+    if (token) {
+      try {
+        const decoded: any = jwtDecode(token);
+        const dept = storedDeptId || decoded.department_id || decoded.department;
+        setIsSuperAdmin(!dept || dept === 'DEAN' || dept === 'null');
+      } catch (e) {
+        setIsSuperAdmin(true);
+      }
+    }
+
     const fetch = async () => {
       setIsLoading(true);
       try {
@@ -31,7 +45,7 @@ const AdminAgreements = () => {
         const data = Array.isArray(res.data) ? res.data : (res.data?.results || []);
         setAgreements(data.map((a: any) => ({
           id: a.id,
-          student: a.studentName || `${a.student?.firstName || ''} ${a.student?.lastName || ''}`.trim() || '—',
+          student: (typeof a.student === 'object' ? `${a.student?.firstName || ''} ${a.student?.lastName || ''}`.trim() : String(a.student || '')) || a.studentName || '—',
           company: a.companyName || a.company?.companyName || '—',
           offer: a.offerTitle || a.offer?.title || '—',
           generatedOn: a.validatedAt || a.created_at || a.generatedOn || '—',
@@ -72,11 +86,19 @@ const AdminAgreements = () => {
           <Link to="/admin/dashboard" className="flex items-center gap-4 px-4 py-3.5 text-white/40 hover:text-white hover:bg-white/5 rounded-2xl text-[13px] font-bold tracking-wide transition-all group">
             <LayoutDashboard size={18} className="group-hover:scale-110 transition-transform" />Dashboard
           </Link>
-          <Link to="/admin/companies" className="flex items-center gap-4 px-4 py-3.5 text-white/40 hover:text-white hover:bg-white/5 rounded-2xl text-[13px] font-bold tracking-wide transition-all group">
-            <Building2 size={18} className="group-hover:scale-110 transition-transform" />Companies
+          {isSuperAdmin && (
+            <Link to="/admin/companies" className="flex items-center gap-4 px-4 py-3.5 text-white/40 hover:text-white hover:bg-white/5 rounded-2xl text-[13px] font-bold tracking-wide transition-all group">
+              <Building2 size={18} className="group-hover:scale-110 transition-transform" />Companies
+            </Link>
+          )}
+          <Link to="/admin/students" className="flex items-center gap-4 px-4 py-3.5 text-white/40 hover:text-white hover:bg-white/5 rounded-2xl text-[13px] font-bold tracking-wide transition-all group">
+            <Users size={18} className="group-hover:scale-110 transition-transform" />Student Directory
+          </Link>
+          <Link to="/admin/applications" className="flex items-center gap-4 px-4 py-3.5 text-white/40 hover:text-white hover:bg-white/5 rounded-2xl text-[13px] font-bold tracking-wide transition-all group">
+            <ClipboardList size={18} className="group-hover:scale-110 transition-transform" />Student Applications
           </Link>
           <Link to="/admin/agreements" className="flex items-center gap-4 px-4 py-3.5 bg-blue-600 rounded-2xl text-[13px] font-bold tracking-wide transition-all shadow-lg shadow-blue-600/20 group">
-            <ClipboardList size={18} className="group-hover:scale-110 transition-transform" />Agreements
+            <FileText size={18} className="group-hover:scale-110 transition-transform" />Agreements
           </Link>
           <Link to="/admin/statistics" className="flex items-center gap-4 px-4 py-3.5 text-white/40 hover:text-white hover:bg-white/5 rounded-2xl text-[13px] font-bold tracking-wide transition-all group">
             <BarChart3 size={18} className="group-hover:scale-110 transition-transform" />Statistics
@@ -95,9 +117,9 @@ const AdminAgreements = () => {
             <h2 className="text-2xl font-display font-bold text-navy-900 tracking-tight">Agreements</h2>
             <p className="text-[11px] font-bold uppercase tracking-widest text-navy-900/30 mt-1">Validated internship conventions de stage</p>
           </div>
-          <button className="relative p-3 bg-paper rounded-2xl text-navy-900/40 hover:text-blue-600 hover:bg-blue-50 transition-all border border-gray-100">
+          <Link to="/notifications" className="relative p-3 bg-paper rounded-2xl text-navy-900/40 hover:text-blue-600 hover:bg-blue-50 transition-all border border-gray-100">
             <Bell size={20} /><span className="absolute top-2.5 right-2.5 w-2.5 h-2.5 bg-blue-600 rounded-full border-2 border-white" />
-          </button>
+          </Link>
         </header>
 
         <div className="p-12 space-y-10 max-w-7xl mx-auto">

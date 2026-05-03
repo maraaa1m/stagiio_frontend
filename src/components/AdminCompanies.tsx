@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import {
   LayoutDashboard, Building2, ClipboardList, BarChart3, LogOut, Bell,
-  CheckCircle2, X, Loader2, MapPin, Globe, Phone, ShieldX, Search,
+  CheckCircle2, X, Loader2, MapPin, Globe, Phone, ShieldX, Search, Users,
 } from 'lucide-react';
 import { useNavigate, Link } from 'react-router-dom';
 import api from '@/api';
@@ -86,6 +86,12 @@ const AdminCompanies = () => {
           </Link>
           <Link to="/admin/companies" className="flex items-center gap-4 px-4 py-3.5 bg-blue-600 rounded-2xl text-[13px] font-bold tracking-wide transition-all shadow-lg shadow-blue-600/20 group">
             <Building2 size={18} className="group-hover:scale-110 transition-transform" />Companies
+          </Link>
+          <Link to="/admin/students" className="flex items-center gap-4 px-4 py-3.5 text-white/40 hover:text-white hover:bg-white/5 rounded-2xl text-[13px] font-bold tracking-wide transition-all group">
+            <Users size={18} className="group-hover:scale-110 transition-transform" />Students
+          </Link>
+          <Link to="/admin/applications" className="flex items-center gap-4 px-4 py-3.5 text-white/40 hover:text-white hover:bg-white/5 rounded-2xl text-[13px] font-bold tracking-wide transition-all group">
+            <ClipboardList size={18} className="group-hover:scale-110 transition-transform" />Applications
           </Link>
           <Link to="/admin/agreements" className="flex items-center gap-4 px-4 py-3.5 text-white/40 hover:text-white hover:bg-white/5 rounded-2xl text-[13px] font-bold tracking-wide transition-all group">
             <ClipboardList size={18} className="group-hover:scale-110 transition-transform" />Agreements

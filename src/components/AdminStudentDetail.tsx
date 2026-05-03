@@ -53,26 +53,25 @@ const AdminStudentDetail = () => {
       try {
         const response = await api.get(`/api/admin/students/${id}/`);
         const s = response.data;
-        const studentObj = s.student || s.user || s || {};
         
         setStudent({
-          id: s.id || studentObj.id,
-          firstName: studentObj.firstName || studentObj.first_name || '',
-          lastName: studentObj.lastName || studentObj.last_name || '',
-          email: studentObj.email || '',
-          phoneNumber: studentObj.phoneNumber || studentObj.phone_number || '',
-          university: studentObj.university?.name || studentObj.university || '',
-          faculty: studentObj.faculty?.name || studentObj.faculty || '',
-          department: studentObj.department?.name || studentObj.department || '',
-          universityWilaya: studentObj.univWillaya || studentObj.univ_willaya || studentObj.university_wilaya || studentObj.wilaya || '',
-          isPlaced: s.isPlaced || s.is_placed || false,
-          cvUrl: studentObj.cv_url || studentObj.cvFile || studentObj.cv || '',
-          photoUrl: studentObj.profile_photo?.url || studentObj.photo || '',
-          socialSecurityNumber: studentObj.social_security_number || studentObj.socialSecurityNumber || '',
-          idCardNumber: studentObj.idCardNumber || studentObj.id_card_number || studentObj.IDCardNumber || '',
-          githubLink: studentObj.github_link || studentObj.githubLink || '',
-          portfolioLink: studentObj.portfolio_link || studentObj.portfolioLink || '',
-          skills: studentObj.skills || [],
+          id: s.id,
+          firstName: s.firstName || '',
+          lastName: s.lastName || '',
+          email: s.email || '',
+          phoneNumber: s.phoneNumber || '',
+          university: s.university?.name || s.university || '',
+          faculty: s.faculty?.name || s.faculty || '',
+          department: s.department?.name || s.department || '',
+          universityWilaya: s.univWillaya || s.universityWilaya || s.wilaya || '',
+          isPlaced: s.isPlaced || false,
+          cvUrl: s.cvUrl || '',
+          photoUrl: s.photoUrl || '',
+          socialSecurityNumber: s.socialSecurityNumber || '',
+          idCardNumber: s.idCardNumber || s.IDCardNumber || '',
+          githubLink: s.githubLink || '',
+          portfolioLink: s.portfolioLink || '',
+          skills: s.skills || [],
           applications: s.applications || []
         });
       } catch (err: any) {
@@ -125,7 +124,7 @@ const AdminStudentDetail = () => {
             <div className="bg-white p-8 rounded-[3rem] border border-gray-100 shadow-sm text-center">
               <div className="w-32 h-32 rounded-[2.5rem] bg-black mx-auto mb-6 shadow-2xl shadow-black/20 overflow-hidden flex items-center justify-center text-white text-4xl font-bold">
                 {student.photoUrl ? (
-                  <img src={student.photoUrl} alt="Photo" className="w-full h-full object-cover" />
+                  <img src={student.photoUrl} alt="Photo" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
                 ) : (
                   student.firstName[0]
                 )}

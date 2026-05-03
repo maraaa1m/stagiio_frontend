@@ -20,6 +20,7 @@ import {
 import { useNavigate, Link } from 'react-router-dom';
 import api from '@/api';
 import { toast, Toaster } from 'sonner';
+import { jwtDecode } from 'jwt-decode';
 
 interface Stats {
   total_students?: number;
@@ -89,8 +90,21 @@ const AdminStatistics = () => {
   const navigate = useNavigate();
   const [stats, setStats]       = useState<Stats | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isSuperAdmin, setIsSuperAdmin] = useState(false);
 
   useEffect(() => {
+    const token = localStorage.getItem('access_token');
+    const storedDeptId = localStorage.getItem('department_id');
+    if (token) {
+      try {
+        const decoded: any = jwtDecode(token);
+        const dept = storedDeptId || decoded.department_id || decoded.department;
+        setIsSuperAdmin(!dept || dept === 'DEAN' || dept === 'null');
+      } catch (e) {
+        setIsSuperAdmin(true);
+      }
+    }
+
     const fetchStats = async () => {
       setIsLoading(true);
       try {
@@ -144,20 +158,24 @@ const AdminStatistics = () => {
             <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-white/20">Main Menu</p>
           </div>
           <Link to="/admin/dashboard" className="flex items-center gap-4 px-4 py-3.5 text-white/40 hover:text-white hover:bg-white/5 rounded-2xl text-[13px] font-bold tracking-wide transition-all group">
-            <LayoutDashboard size={18} className="group-hover:scale-110 transition-transform" />
-            Dashboard
+            <LayoutDashboard size={18} className="group-hover:scale-110 transition-transform" />Dashboard
           </Link>
-          <Link to="/admin/companies" className="flex items-center gap-4 px-4 py-3.5 text-white/40 hover:text-white hover:bg-white/5 rounded-2xl text-[13px] font-bold tracking-wide transition-all group">
-            <Building2 size={18} className="group-hover:scale-110 transition-transform" />
-            Companies
+          {isSuperAdmin && (
+            <Link to="/admin/companies" className="flex items-center gap-4 px-4 py-3.5 text-white/40 hover:text-white hover:bg-white/5 rounded-2xl text-[13px] font-bold tracking-wide transition-all group">
+              <Building2 size={18} className="group-hover:scale-110 transition-transform" />Companies
+            </Link>
+          )}
+          <Link to="/admin/students" className="flex items-center gap-4 px-4 py-3.5 text-white/40 hover:text-white hover:bg-white/5 rounded-2xl text-[13px] font-bold tracking-wide transition-all group">
+            <Users size={18} className="group-hover:scale-110 transition-transform" />Student Directory
+          </Link>
+          <Link to="/admin/applications" className="flex items-center gap-4 px-4 py-3.5 text-white/40 hover:text-white hover:bg-white/5 rounded-2xl text-[13px] font-bold tracking-wide transition-all group">
+            <ClipboardList size={18} className="group-hover:scale-110 transition-transform" />Student Applications
           </Link>
           <Link to="/admin/agreements" className="flex items-center gap-4 px-4 py-3.5 text-white/40 hover:text-white hover:bg-white/5 rounded-2xl text-[13px] font-bold tracking-wide transition-all group">
-            <ClipboardList size={18} className="group-hover:scale-110 transition-transform" />
-            Agreements
+            <FileText size={18} className="group-hover:scale-110 transition-transform" />Agreements
           </Link>
           <Link to="/admin/statistics" className="flex items-center gap-4 px-4 py-3.5 bg-blue-600 rounded-2xl text-[13px] font-bold tracking-wide transition-all shadow-lg shadow-blue-600/20 group">
-            <BarChart3 size={18} className="group-hover:scale-110 transition-transform" />
-            Statistics
+            <BarChart3 size={18} className="group-hover:scale-110 transition-transform" />Statistics
           </Link>
         </nav>
         <div className="p-8 border-t border-white/5">

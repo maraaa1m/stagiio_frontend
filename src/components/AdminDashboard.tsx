@@ -95,6 +95,7 @@ const AdminDashboard = () => {
     supervisorName: ''
   });
   const [adminDept, setAdminDept] = useState<string | null>(null);
+  const [isSuperAdmin, setIsSuperAdmin] = useState(false);
 
   useEffect(() => {
     const token = localStorage.getItem('access_token');
@@ -106,9 +107,11 @@ const AdminDashboard = () => {
         // Dean Mode: If department_id is null or 'DEAN', it unlocks restricted view
         const dept = storedDeptId || decoded.department_id || decoded.department;
         setAdminDept(dept ? dept.toString() : 'DEAN');
+        setIsSuperAdmin(!dept || dept === 'DEAN' || dept === 'null');
       } catch (e) {
         console.error('Error decoding token:', e);
         setAdminDept('DEAN');
+        setIsSuperAdmin(true);
       }
     }
   }, []);
@@ -358,10 +361,12 @@ const AdminDashboard = () => {
             <LayoutDashboard size={18} className="group-hover:scale-110 transition-transform" />
             Dashboard
           </Link>
-          <Link to="/admin/companies" className="flex items-center gap-4 px-4 py-3.5 text-white/40 hover:text-white hover:bg-white/5 rounded-2xl text-[13px] font-bold tracking-wide transition-all group">
-            <Building2 size={18} className="group-hover:scale-110 transition-transform" />
-            Companies
-          </Link>
+          {isSuperAdmin && (
+            <Link to="/admin/companies" className="flex items-center gap-4 px-4 py-3.5 text-white/40 hover:text-white hover:bg-white/5 rounded-2xl text-[13px] font-bold tracking-wide transition-all group">
+              <Building2 size={18} className="group-hover:scale-110 transition-transform" />
+              Companies
+            </Link>
+          )}
           <Link to="/admin/students" className="flex items-center gap-4 px-4 py-3.5 text-white/40 hover:text-white hover:bg-white/5 rounded-2xl text-[13px] font-bold tracking-wide transition-all group">
             <Users size={18} className="group-hover:scale-110 transition-transform" />
             Student Directory
@@ -410,10 +415,10 @@ const AdminDashboard = () => {
                 </span>
               </div>
             )}
-            <button className="relative p-3 bg-paper rounded-2xl text-black/40 hover:text-blue-600 hover:bg-blue-50 transition-all border border-gray-100">
+            <Link to="/notifications" className="relative p-3 bg-paper rounded-2xl text-black/40 hover:text-blue-600 hover:bg-blue-50 transition-all border border-gray-100">
               <Bell size={20} />
               <span className="absolute top-2.5 right-2.5 w-2.5 h-2.5 bg-blue-600 rounded-full border-2 border-white" />
-            </button>
+            </Link>
           </div>
         </header>
 

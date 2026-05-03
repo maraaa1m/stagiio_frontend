@@ -28,17 +28,14 @@ interface Offer {
   id: number;
   title: string;
   description: string;
-  wilaya?: string;
-  willaya?: string;
+  willaya: string;
   type: 'ONLINE' | 'IN_PERSON';
   skills: any[];
-  deadline: string;
-  applicationDeadline?: string;
-  internshipStartDate?: string;
-  internshipEndDate?: string;
-  maxParticipants?: number;
-  startDate?: string;
-  startingDay?: string;
+  applicationDeadline: string;
+  deadline?: string;
+  internshipStartDate: string;
+  internshipEndDate: string;
+  maxParticipants: number;
 }
 
 interface Skill {
@@ -60,8 +57,6 @@ const ManageOffers = () => {
     title: '',
     description: '',
     willaya: '',
-    startingDay: '',
-    deadline: '',
     applicationDeadline: '',
     internshipStartDate: '',
     internshipEndDate: '',
@@ -80,8 +75,21 @@ const ManageOffers = () => {
           api.get('/api/skills/')
         ]);
         
-        const data = Array.isArray(offersRes.data) ? offersRes.data : (offersRes.data?.offers || []);
-        setOffers(data);
+        const raw = Array.isArray(offersRes.data) ? offersRes.data : (offersRes.data?.offers || []);
+        const mapped = raw.map((o: any) => ({
+          id: o.id,
+          title: o.title || '',
+          description: o.description || '',
+          willaya: o.willaya || o.wilaya || '',
+          type: o.type || 'IN_PERSON',
+          skills: o.requiredSkills || o.skills || [],
+          deadline: o.applicationDeadline || o.deadline || '',
+          applicationDeadline: o.applicationDeadline || '',
+          internshipStartDate: o.internshipStartDate || '',
+          internshipEndDate: o.internshipEndDate || '',
+          maxParticipants: o.maxParticipants || 1,
+        }));
+        setOffers(mapped);
         setAllSkills(Array.isArray(skillsRes.data) ? skillsRes.data : (skillsRes.data?.skills || []));
       } catch (err) {
         console.error('Error fetching offers:', err);
@@ -100,12 +108,10 @@ const ManageOffers = () => {
       setFormData({
         title: offer.title,
         description: offer.description,
-        willaya: offer.wilaya || (offer as any).willaya,
-        startingDay: offer.startDate || (offer as any).startingDay,
-        deadline: offer.deadline,
-        applicationDeadline: offer.applicationDeadline || offer.deadline,
-        internshipStartDate: offer.internshipStartDate || offer.startDate || (offer as any).startingDay,
-        internshipEndDate: offer.internshipEndDate || '',
+        willaya: offer.willaya,
+        applicationDeadline: offer.applicationDeadline,
+        internshipStartDate: offer.internshipStartDate,
+        internshipEndDate: offer.internshipEndDate,
         maxParticipants: offer.maxParticipants || 1,
         type: offer.type,
         skillIds: offer.skills.map((s: any) => s.id?.toString() || s.toString())
@@ -116,8 +122,6 @@ const ManageOffers = () => {
         title: '',
         description: '',
         willaya: '',
-        startingDay: '',
-        deadline: '',
         applicationDeadline: '',
         internshipStartDate: '',
         internshipEndDate: '',
@@ -137,7 +141,7 @@ const ManageOffers = () => {
     const payload = {
       title: formData.title,
       description: formData.description,
-      wilaya: formData.willaya,
+      willaya: formData.willaya,
       internshipStartDate: formData.internshipStartDate,
       internshipEndDate: formData.internshipEndDate,
       applicationDeadline: formData.applicationDeadline,
@@ -157,8 +161,21 @@ const ManageOffers = () => {
       
       // Refresh list
       const response = await api.get('/api/offers/');
-      const data = Array.isArray(response.data) ? response.data : (response.data?.offers || []);
-      setOffers(data);
+      const raw = Array.isArray(response.data) ? response.data : (response.data?.offers || []);
+      const mapped = raw.map((o: any) => ({
+        id: o.id,
+        title: o.title || '',
+        description: o.description || '',
+        willaya: o.willaya || o.wilaya || '',
+        type: o.type || 'IN_PERSON',
+        skills: o.requiredSkills || o.skills || [],
+        deadline: o.applicationDeadline || o.deadline || '',
+        applicationDeadline: o.applicationDeadline || '',
+        internshipStartDate: o.internshipStartDate || '',
+        internshipEndDate: o.internshipEndDate || '',
+        maxParticipants: o.maxParticipants || 1,
+      }));
+      setOffers(mapped);
       setIsModalOpen(false);
     } catch (err) {
       console.error('Error saving offer:', err);
@@ -303,7 +320,7 @@ const ManageOffers = () => {
                       <div className="flex flex-wrap gap-3">
                         <div className="px-3 py-1.5 bg-paper rounded-xl text-[9px] font-bold uppercase tracking-widest text-navy-900/40 flex items-center gap-2">
                           <MapPin size={12} />
-                          {offer.wilaya}
+                          {offer.willaya || '—'}
                         </div>
                         <div className="px-3 py-1.5 bg-blue-50 rounded-xl text-[9px] font-bold uppercase tracking-widest text-blue-600 border border-blue-100/30">
                           {offer.type}
@@ -340,7 +357,7 @@ const ManageOffers = () => {
                   <div className="flex items-center justify-between pt-6 border-t border-gray-50">
                     <div className="flex items-center gap-2.5 text-orange-500">
                       <Clock size={16} />
-                      <span className="text-[10px] font-bold uppercase tracking-widest">Deadline: {offer.deadline}</span>
+                      <span className="text-[10px] font-bold uppercase tracking-widest">Deadline: {offer.applicationDeadline}</span>
                     </div>
                     <Link to={`/company/offers/${offer.id}`} className="text-[10px] font-bold uppercase tracking-widest text-blue-600 hover:text-navy-900 transition-colors flex items-center gap-2">
                       View Details <ChevronRight size={14} />
@@ -485,7 +502,7 @@ const ManageOffers = () => {
                           required
                           type="date"
                           value={formData.applicationDeadline}
-                          onChange={(e) => setFormData({...formData, applicationDeadline: e.target.value, deadline: e.target.value})}
+                          onChange={(e) => setFormData({...formData, applicationDeadline: e.target.value})}
                           className="w-full bg-paper border border-gray-100 rounded-2xl py-4 px-6 outline-none focus:border-blue-600/30 focus:ring-4 focus:ring-blue-600/5 transition-all font-medium text-navy-900"
                         />
                       </div>
@@ -578,4 +595,3 @@ const ManageOffers = () => {
 };
 
 export default ManageOffers;
-
