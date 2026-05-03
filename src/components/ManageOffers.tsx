@@ -17,7 +17,8 @@ import {
   X, 
   Loader2,
   AlertCircle,
-  CheckCircle2
+  CheckCircle2,
+  Users
 } from 'lucide-react';
 import { useNavigate, Link } from 'react-router-dom';
 import api from '@/api';
@@ -36,6 +37,7 @@ interface Offer {
   internshipStartDate: string;
   internshipEndDate: string;
   maxParticipants: number;
+  applicantCount: number;
 }
 
 interface Skill {
@@ -70,25 +72,37 @@ const ManageOffers = () => {
       setIsLoading(true);
       
       try {
-        const [offersRes, skillsRes] = await Promise.all([
+        const [offersRes, skillsRes, appsRes] = await Promise.all([
           api.get('/api/offers/'),
-          api.get('/api/skills/')
+          api.get('/api/skills/'),
+          api.get('/api/company/applications/')
         ]);
         
-        const raw = Array.isArray(offersRes.data) ? offersRes.data : (offersRes.data?.offers || []);
-        const mapped = raw.map((o: any) => ({
-          id: o.id,
-          title: o.title || '',
-          description: o.description || '',
-          willaya: o.willaya || o.wilaya || '',
-          type: o.type || 'IN_PERSON',
-          skills: o.requiredSkills || o.skills || [],
-          deadline: o.applicationDeadline || o.deadline || '',
-          applicationDeadline: o.applicationDeadline || '',
-          internshipStartDate: o.internshipStartDate || '',
-          internshipEndDate: o.internshipEndDate || '',
-          maxParticipants: o.maxParticipants || 1,
-        }));
+        const appsData = Array.isArray(appsRes.data) ? appsRes.data : (appsRes.data?.applications || appsRes.data?.results || []);
+        const rawOffers = Array.isArray(offersRes.data) ? offersRes.data : (offersRes.data?.offers || []);
+        
+        const mapped = rawOffers.map((o: any) => {
+          const count = appsData.filter((a: any) => {
+            const appOffId = a.offer_id || (typeof a.offer === 'object' ? a.offer.id : null);
+            const appOffTitle = a.offer_title || (typeof a.offer === 'object' ? a.offer.title : a.offer);
+            return appOffId === o.id || appOffTitle === o.title;
+          }).length;
+
+          return {
+            id: o.id,
+            title: o.title || '',
+            description: o.description || '',
+            willaya: o.willaya || o.wilaya || '',
+            type: o.type || 'IN_PERSON',
+            skills: o.requiredSkills || o.skills || [],
+            deadline: o.applicationDeadline || o.deadline || '',
+            applicationDeadline: o.applicationDeadline || '',
+            internshipStartDate: o.internshipStartDate || '',
+            internshipEndDate: o.internshipEndDate || '',
+            maxParticipants: o.maxParticipants || 1,
+            applicantCount: count || o.applicantCount || o.applicant_count || 0
+          };
+        });
         setOffers(mapped);
         setAllSkills(Array.isArray(skillsRes.data) ? skillsRes.data : (skillsRes.data?.skills || []));
       } catch (err) {
@@ -138,16 +152,30 @@ const ManageOffers = () => {
     setIsSubmitting(true);
     
     // Map frontend fields to backend expected fields
+    // Adding both camelCase and snake_case to be safe, and converting skills to integers
     const payload = {
       title: formData.title,
       description: formData.description,
       willaya: formData.willaya,
+      wilaya: formData.willaya, // Alternative spelling
+      internship_start_date: formData.internshipStartDate,
       internshipStartDate: formData.internshipStartDate,
+      startDate: formData.internshipStartDate,
+      start_date: formData.internshipStartDate,
+      internship_end_date: formData.internshipEndDate,
       internshipEndDate: formData.internshipEndDate,
+      endDate: formData.internshipEndDate,
+      end_date: formData.internshipEndDate,
+      application_deadline: formData.applicationDeadline,
       applicationDeadline: formData.applicationDeadline,
+      deadline: formData.applicationDeadline,
+      max_participants: formData.maxParticipants,
       maxParticipants: formData.maxParticipants,
       type: formData.type,
-      skillIds: formData.skillIds
+      skill_ids: formData.skillIds.map(id => parseInt(id)),
+      skillIds: formData.skillIds.map(id => parseInt(id)),
+      required_skills: formData.skillIds.map(id => parseInt(id)),
+      skills: formData.skillIds.map(id => parseInt(id))
     };
     
     try {
@@ -161,25 +189,38 @@ const ManageOffers = () => {
       
       // Refresh list
       const response = await api.get('/api/offers/');
+      const appsResponse = await api.get('/api/company/applications/');
       const raw = Array.isArray(response.data) ? response.data : (response.data?.offers || []);
-      const mapped = raw.map((o: any) => ({
-        id: o.id,
-        title: o.title || '',
-        description: o.description || '',
-        willaya: o.willaya || o.wilaya || '',
-        type: o.type || 'IN_PERSON',
-        skills: o.requiredSkills || o.skills || [],
-        deadline: o.applicationDeadline || o.deadline || '',
-        applicationDeadline: o.applicationDeadline || '',
-        internshipStartDate: o.internshipStartDate || '',
-        internshipEndDate: o.internshipEndDate || '',
-        maxParticipants: o.maxParticipants || 1,
-      }));
+      const appsD = Array.isArray(appsResponse.data) ? appsResponse.data : (appsResponse.data?.applications || appsResponse.data?.results || []);
+      
+      const mapped = raw.map((o: any) => {
+        const count = appsD.filter((a: any) => {
+          const appOffId = a.offer_id || (typeof a.offer === 'object' ? a.offer.id : null);
+          const appOffTitle = a.offer_title || (typeof a.offer === 'object' ? a.offer.title : a.offer);
+          return appOffId === o.id || appOffTitle === o.title;
+        }).length;
+
+        return {
+          id: o.id,
+          title: o.title || '',
+          description: o.description || '',
+          willaya: o.willaya || o.wilaya || '',
+          type: o.type || 'IN_PERSON',
+          skills: o.requiredSkills || o.skills || [],
+          deadline: o.applicationDeadline || o.deadline || '',
+          applicationDeadline: o.applicationDeadline || '',
+          internshipStartDate: o.internshipStartDate || '',
+          internshipEndDate: o.internshipEndDate || '',
+          maxParticipants: o.maxParticipants || 1,
+          applicantCount: count || o.applicantCount || o.applicant_count || 0
+        };
+      });
       setOffers(mapped);
       setIsModalOpen(false);
-    } catch (err) {
-      console.error('Error saving offer:', err);
-      toast.error('Failed to save offer.');
+    } catch (err: any) {
+      console.error('Error saving offer:', err.response?.data || err);
+      const errorMsg = err.response?.data?.detail || err.response?.data?.message || 'Failed to save offer.';
+      toast.error(errorMsg);
     } finally {
       setIsSubmitting(false);
     }
@@ -324,6 +365,10 @@ const ManageOffers = () => {
                         </div>
                         <div className="px-3 py-1.5 bg-blue-50 rounded-xl text-[9px] font-bold uppercase tracking-widest text-blue-600 border border-blue-100/30">
                           {offer.type}
+                        </div>
+                        <div className="px-3 py-1.5 bg-purple-50 rounded-xl text-[9px] font-bold uppercase tracking-widest text-purple-600 flex items-center gap-2 border border-purple-100/30">
+                          <Users size={12} />
+                          {offer.applicantCount} Applicants
                         </div>
                       </div>
                     </div>
@@ -545,7 +590,7 @@ const ManageOffers = () => {
                   </div>
                 </div>
 
-                <div className="space-y-6">
+                <div className="space-y-6 pb-20">
                   <div className="flex items-center justify-between">
                     <label className="text-[10px] font-bold uppercase tracking-widest text-navy-900/30 ml-4">Required Skills</label>
                     <span className="text-[10px] font-bold uppercase tracking-widest text-blue-600">{formData.skillIds.length} selected</span>
@@ -567,25 +612,25 @@ const ManageOffers = () => {
                     ))}
                   </div>
                 </div>
-              </form>
 
-              <div className="p-10 border-t border-gray-100 bg-paper/50 flex justify-end gap-4 shrink-0">
-                <button 
-                  type="button"
-                  onClick={() => setIsModalOpen(false)}
-                  className="px-8 py-4 bg-white text-navy-900 rounded-2xl font-bold text-[11px] uppercase tracking-widest hover:bg-gray-100 transition-all border border-gray-100"
-                >
-                  Cancel
-                </button>
-                <button 
-                  onClick={handleSubmit}
-                  disabled={isSubmitting}
-                  className="px-12 py-4 bg-blue-600 text-white rounded-2xl font-bold text-[11px] uppercase tracking-widest hover:bg-navy-900 transition-all shadow-xl shadow-blue-600/20 flex items-center gap-3 active:scale-95"
-                >
-                  {isSubmitting ? <Loader2 size={18} className="animate-spin" /> : <CheckCircle2 size={18} />}
-                  {editingOffer ? 'Save Changes' : 'Publish Offer'}
-                </button>
-              </div>
+                <div className="pt-10 border-t border-gray-100 bg-paper/50 flex justify-end gap-4 shrink-0">
+                  <button 
+                    type="button"
+                    onClick={() => setIsModalOpen(false)}
+                    className="px-8 py-4 bg-white text-navy-900 rounded-2xl font-bold text-[11px] uppercase tracking-widest hover:bg-gray-100 transition-all border border-gray-100"
+                  >
+                    Cancel
+                  </button>
+                  <button 
+                    type="submit"
+                    disabled={isSubmitting}
+                    className="px-12 py-4 bg-blue-600 text-white rounded-2xl font-bold text-[11px] uppercase tracking-widest hover:bg-navy-900 transition-all shadow-xl shadow-blue-600/20 flex items-center gap-3 active:scale-95"
+                  >
+                    {isSubmitting ? <Loader2 size={18} className="animate-spin" /> : <CheckCircle2 size={18} />}
+                    {editingOffer ? 'Save Changes' : 'Publish Offer'}
+                  </button>
+                </div>
+              </form>
             </motion.div>
           </div>
         )}

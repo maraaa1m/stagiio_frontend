@@ -14,6 +14,7 @@ import StudentProfile from "./components/StudentProfile";
 import CompanyProfile from "./components/CompanyProfile";
 import ManageOffers from "./components/ManageOffers";
 import CompanyApplications from "./components/CompanyApplications";
+import CompanyOfferDetail from "./components/CompanyOfferDetail";
 import AdminDashboard from "./components/AdminDashboard";
 import AdminStudents from "./components/AdminStudents";
 import AdminApplications from "./components/AdminApplications";
@@ -49,12 +50,14 @@ export default function App() {
             <Route path="/student/offers/:id" element={<ProtectedRoute allowedRoles={['STUDENT']}><OfferDetail /></ProtectedRoute>} />
             <Route path="/student/applications" element={<ProtectedRoute allowedRoles={['STUDENT']}><MyApplications /></ProtectedRoute>} />
             <Route path="/student/profile" element={<ProtectedRoute allowedRoles={['STUDENT']}><StudentProfile /></ProtectedRoute>} />
-            <Route path="/student/notifications" element={<ProtectedRoute allowedRoles={['STUDENT', 'COMPANY', 'ADMIN']}><NotificationsPage /></ProtectedRoute>} />
+            <Route path="/student/notifications" element={<ProtectedRoute allowedRoles={['STUDENT']}><NotificationsPage /></ProtectedRoute>} />
+            <Route path="/notifications" element={<ProtectedRoute allowedRoles={['STUDENT', 'COMPANY', 'ADMIN']}><NotificationsPage /></ProtectedRoute>} />
             
             {/* Company Routes */}
             <Route path="/company/dashboard" element={<ProtectedRoute allowedRoles={['COMPANY']}><CompanyDashboard /></ProtectedRoute>} />
             <Route path="/company/profile" element={<ProtectedRoute allowedRoles={['COMPANY']}><CompanyProfile /></ProtectedRoute>} />
             <Route path="/company/offers" element={<ProtectedRoute allowedRoles={['COMPANY']}><ManageOffers /></ProtectedRoute>} />
+            <Route path="/company/offers/:id" element={<ProtectedRoute allowedRoles={['COMPANY']}><CompanyOfferDetail /></ProtectedRoute>} />
             <Route path="/company/applications" element={<ProtectedRoute allowedRoles={['COMPANY']}><CompanyApplications /></ProtectedRoute>} />
             
             {/* Admin Routes */}

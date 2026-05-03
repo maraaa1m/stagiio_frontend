@@ -17,6 +17,7 @@ import {
   X,
   MessageSquare,
   Search,
+  Users,
   ArrowRight,
   Github,
   Globe,
@@ -111,7 +112,8 @@ const CompanyDashboard = () => {
             studentName: `${a.student?.firstName || ''} ${a.student?.lastName || ''}`,
             studentEmail: a.student?.email || '',
             studentPhoto: a.student?.profile_photo || a.student?.photo || '',
-            offerTitle: a.offer_title || a.offer || '',
+            offerTitle: a.offer_title || (typeof a.offer === 'object' ? a.offer.title : a.offer) || '',
+            offerId: a.offer_id || (typeof a.offer === 'object' ? a.offer.id : null),
             matchingScore: a.matchingScore || a.matching_score || 0,
             status: a.status,
             internshipStatus: a.internship?.status || null,
@@ -139,17 +141,35 @@ const CompanyDashboard = () => {
               status: a.internshipStatus || a.status,
             }));
           setActiveInterns(interns);
+
+          // Update offers count if offers already loaded (though they are fetched in parallel)
+          // Actually we will handle this in the offersRes block using local variable
         }
+
         if (offersRes.status === 'fulfilled') {
           const data = Array.isArray(offersRes.value.data) ? offersRes.value.data : (offersRes.value.data?.offers || []);
-          const mapped = data.map((o: any) => ({
-            id: o.id,
-            title: o.title,
-            willaya: o.willaya || o.wilaya,
-            type: o.type,
-            applicantCount: o.applicantCount || o.applicant_count || 0,
-            applicationDeadline: o.applicationDeadline || o.deadline
-          }));
+          
+          // Get applications data from appsRes to count
+          const appsData = appsRes.status === 'fulfilled' 
+            ? (Array.isArray(appsRes.value.data) ? appsRes.value.data : (appsRes.value.data?.applications || appsRes.value.data?.results || []))
+            : [];
+
+          const mapped = data.map((o: any) => {
+            const count = appsData.filter((a: any) => {
+              const appOffId = a.offer_id || (typeof a.offer === 'object' ? a.offer.id : null);
+              const appOffTitle = a.offer_title || (typeof a.offer === 'object' ? a.offer.title : a.offer);
+              return appOffId === o.id || appOffTitle === o.title;
+            }).length;
+
+            return {
+              id: o.id,
+              title: o.title,
+              willaya: o.willaya || o.wilaya,
+              type: o.type,
+              applicantCount: count || o.applicantCount || o.applicant_count || 0,
+              applicationDeadline: o.applicationDeadline || o.deadline
+            };
+          });
           setOffers(mapped.slice(0, 3));
         }
       } catch (err) {
@@ -543,7 +563,7 @@ const CompanyDashboard = () => {
                 ) : offers.length === 0 ? (
                   <div className="bg-white p-12 rounded-[3rem] border border-gray-100 text-center border-dashed">
                     <p className="text-navy-900/30 font-bold uppercase tracking-widest text-[11px]">No active offers</p>
-                    <Link to="/company/offers/new" className="mt-6 inline-flex px-6 py-3 bg-navy-900 text-white rounded-xl text-[11px] font-bold uppercase tracking-widest hover:bg-blue-600 transition-all">Post Now</Link>
+                    <Link to="/company/offers" className="mt-6 inline-flex px-6 py-3 bg-navy-900 text-white rounded-xl text-[11px] font-bold uppercase tracking-widest hover:bg-blue-600 transition-all">Post Now</Link>
                   </div>
                 ) : (
                   offers.map((offer, i) => (
@@ -565,6 +585,10 @@ const CompanyDashboard = () => {
                         <div className="flex items-center gap-2 text-navy-900/30">
                           <MapPin size={14} />
                           <span className="text-[11px] font-bold uppercase tracking-widest">{offer.willaya}</span>
+                        </div>
+                        <div className="flex items-center gap-2 text-blue-600">
+                          <Users size={14} />
+                          <span className="text-[11px] font-bold uppercase tracking-widest">{offer.applicantCount} applicants</span>
                         </div>
                       </div>
 
