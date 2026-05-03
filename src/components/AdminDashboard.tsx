@@ -19,7 +19,9 @@ import {
   FileText,
   User,
   Calendar,
-  ArrowRight
+  ArrowRight,
+  QrCode,
+  Download
 } from 'lucide-react';
 import { useNavigate, Link } from 'react-router-dom';
 import api from '@/api';
@@ -684,17 +686,47 @@ const AdminDashboard = () => {
                 <p className="text-[11px] font-bold uppercase tracking-widest text-navy-900/30 mt-1">Agreement generated for {validationResult.studentName}</p>
               </div>
 
-              {validationResult.pdfUrl && (
-                <a 
-                  href={validationResult.pdfUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="w-full py-4 bg-navy-900 text-white rounded-2xl font-bold text-[11px] uppercase tracking-widest hover:bg-blue-600 transition-all shadow-xl flex items-center justify-center gap-3"
-                >
-                  <FileText size={18} />
-                  Download Generated PDF
-                </a>
-              )}
+                <div className="flex flex-col gap-3 w-full">
+                  <div className="flex items-center gap-3 p-4 bg-paper rounded-2xl border border-gray-100">
+                    <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center">
+                      <FileText size={20} />
+                    </div>
+                    <div className="text-left">
+                      <p className="text-[10px] font-bold text-navy-900/30 uppercase tracking-widest">Administrative Action</p>
+                      <p className="text-sm font-bold text-navy-900">Digital Agreement Issued</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3 p-4 bg-paper rounded-2xl border border-gray-100">
+                    <div className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center">
+                      <LayoutDashboard size={20} />
+                    </div>
+                    <div className="text-left">
+                      <p className="text-[10px] font-bold text-navy-900/30 uppercase tracking-widest">Internal Sync</p>
+                      <p className="text-sm font-bold text-navy-900">Internship Project Initialized</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3 p-4 bg-paper rounded-2xl border border-gray-100">
+                    <div className="w-10 h-10 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center">
+                      <QrCode size={20} />
+                    </div>
+                    <div className="text-left">
+                      <p className="text-[10px] font-bold text-navy-900/30 uppercase tracking-widest">Digital ID</p>
+                      <p className="text-sm font-bold text-navy-900">Verification QR Code Generated</p>
+                    </div>
+                  </div>
+                </div>
+
+                {validationResult.pdfUrl && (
+                  <a 
+                    href={validationResult.pdfUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="w-full py-4 bg-navy-900 text-white rounded-2xl font-bold text-[11px] uppercase tracking-widest hover:bg-blue-600 transition-all shadow-xl flex items-center justify-center gap-3"
+                  >
+                    <Download size={18} />
+                    Download Generated PDF
+                  </a>
+                )}
 
               <button 
                 onClick={() => setValidationResult(prev => ({ ...prev, isOpen: false }))}

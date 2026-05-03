@@ -74,8 +74,8 @@ const MyApplications = () => {
           offerTitle: a.offer_title || a.offerTitle || a.offer || '',
           company: a.company_name || a.companyName || a.company || '',
           appliedAt: a.applied_date || a.appliedDate || a.application_date || a.created_at || '',
-          pdfUrl: a.pdf_url || a.pdfUrl,
-          certificateUrl: a.certificate_url || a.certificateUrl || a.pdfCertificate,
+          pdfUrl: a.pdf_url || a.pdfUrl || a.internship?.pdf_url || a.internship?.pdfUrl || a.internship?.agreement_url,
+          certificateUrl: a.certificate_url || a.certificateUrl || a.pdfCertificate || a.internship?.certificate_url || a.internship?.pdf_certificate || a.internship?.pdfCertificate,
           refusalReason: a.refusal_reason || a.refusalReason
         }));
 

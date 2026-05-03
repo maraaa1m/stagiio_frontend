@@ -43,6 +43,8 @@ interface Application {
   matchingScore: number;
   status: 'PENDING' | 'ACCEPTED' | 'REFUSED';
   appliedAt: string;
+  pdfUrl?: string;
+  certificateUrl?: string;
   skills: string[];
   githubLink?: string;
   portfolioLink?: string;
@@ -121,6 +123,8 @@ const CompanyDashboard = () => {
             startDate: a.internship?.startDate || a.internship?.start_date || '',
             endDate: a.internship?.endDate || a.internship?.end_date || '',
             appliedAt: a.applicationDate || a.applied_at || '',
+            pdfUrl: a.pdf_url || a.pdfUrl || a.internship?.pdf_url || a.internship?.pdfUrl || a.internship?.agreement_url,
+            certificateUrl: a.certificate_url || a.certificateUrl || a.pdfCertificate || a.internship?.certificate_url || a.internship?.pdf_certificate,
             skills: a.student?.skills || [],
             githubLink: a.student?.githubLink || '',
             portfolioLink: a.student?.portfolioLink || '',
@@ -715,16 +719,58 @@ const CompanyDashboard = () => {
               </div>
 
               <div className="p-10 space-y-10 overflow-y-auto max-h-[70vh]">
+                {/* Technical Skills */}
                 <div className="space-y-4">
                   <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-black/30">Technical Expertise</p>
                   <div className="flex flex-wrap gap-2.5">
                     {reviewModal.app.skills.map((skill: any, si: number) => (
-                      <span key={si} className="px-5 py-2.5 bg-paper rounded-[1rem] text-[11px] font-bold text-black/60 uppercase tracking-widest border border-gray-100">
+                      <span key={si} className={`px-5 py-2.5 bg-paper rounded-[1rem] text-[11px] font-bold text-black/60 uppercase tracking-widest border border-gray-100`}>
                         {typeof skill === 'object' ? skill.skillName || skill.name : skill}
                       </span>
                     ))}
                   </div>
                 </div>
+
+                {/* Documents & Downloads */}
+                {(reviewModal.app.status === 'VALIDATED' || reviewModal.app.status === 'ONGOING' || reviewModal.app.status === 'COMPLETED' || reviewModal.app.internshipStatus === 'ONGOING') && (
+                  <div className="space-y-4">
+                    <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-black/30">Administrative Documents</p>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {reviewModal.app.pdfUrl && (
+                        <a 
+                          href={reviewModal.app.pdfUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex items-center gap-4 p-4 bg-blue-50 text-blue-600 rounded-2xl border border-blue-100/50 hover:bg-blue-600 hover:text-white transition-all group"
+                        >
+                          <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center">
+                            <Download size={20} />
+                          </div>
+                          <div>
+                            <p className="font-bold text-[11px] uppercase tracking-widest">Internship Agreement</p>
+                            <p className="text-[9px] font-medium opacity-60">Digital Copy</p>
+                          </div>
+                        </a>
+                      )}
+                      {reviewModal.app.certificateUrl && (
+                        <a 
+                          href={reviewModal.app.certificateUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex items-center gap-4 p-4 bg-purple-50 text-purple-600 rounded-2xl border border-purple-100/50 hover:bg-purple-600 hover:text-white transition-all group"
+                        >
+                          <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center">
+                            <Download size={20} />
+                          </div>
+                          <div>
+                            <p className="font-bold text-[11px] uppercase tracking-widest">Internship Certificate</p>
+                            <p className="text-[9px] font-medium opacity-60">Completion Proof</p>
+                          </div>
+                        </a>
+                      )}
+                    </div>
+                  </div>
+                )}
 
                 <div className="space-y-4">
                   <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-black/30">Candidate Evidence</p>

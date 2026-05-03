@@ -20,7 +20,8 @@ import {
   Filter,
   ArrowRight,
   FileText,
-  Clock
+  Clock,
+  Download
 } from 'lucide-react';
 import { useNavigate, Link } from 'react-router-dom';
 import api from '@/api';
@@ -31,6 +32,8 @@ interface Application {
   internshipId?: number | null;
   status: 'PENDING' | 'ACCEPTED' | 'REFUSED' | 'VALIDATED' | 'ONGOING' | 'PENDING_CERT' | 'COMPLETED';
   matchingScore: number;
+  pdfUrl?: string;
+  certificateUrl?: string;
   student: {
     firstName: string;
     lastName: string;
@@ -50,6 +53,8 @@ const mapApplications = (data: any[]) => {
     internshipId: a.internship?.id || a.internshipId || null,
     status: a.status,
     matchingScore: a.matchingScore || a.matching_score || 0,
+    pdfUrl: a.pdf_url || a.pdfUrl || a.internship?.pdf_url || a.internship?.pdfUrl || a.internship?.agreement_url,
+    certificateUrl: a.certificate_url || a.certificateUrl || a.pdfCertificate || a.internship?.certificate_url || a.internship?.pdf_certificate,
     student: {
       firstName: a.student?.firstName || a.student?.first_name || '',
       lastName: a.student?.lastName || a.student?.last_name || '',
@@ -336,6 +341,30 @@ const CompanyApplications = () => {
                     </div>
 
                     <div className="flex items-center gap-3">
+                      {(app.status === 'VALIDATED' || app.status === 'ONGOING') && app.pdfUrl && (
+                        <a 
+                          href={app.pdfUrl} 
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                          className="p-4 bg-blue-50 text-blue-600 rounded-2xl hover:bg-blue-600 hover:text-white transition-all border border-blue-100 flex items-center gap-2"
+                          title="Download Agreement"
+                        >
+                          <Download size={18} />
+                          <span className="text-[10px] font-bold uppercase tracking-widest hidden lg:inline">Agreement</span>
+                        </a>
+                      )}
+                      {app.status === 'COMPLETED' && app.certificateUrl && (
+                        <a 
+                          href={app.certificateUrl} 
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                          className="p-4 bg-purple-50 text-purple-600 rounded-2xl hover:bg-purple-600 hover:text-white transition-all border border-purple-100 flex items-center gap-2"
+                          title="Download Certificate"
+                        >
+                          <Download size={18} />
+                          <span className="text-[10px] font-bold uppercase tracking-widest hidden lg:inline">Certificate</span>
+                        </a>
+                      )}
                       {(app.status === 'VALIDATED' || app.status === 'ONGOING') && app.internshipId && (
                         <button 
                           onClick={() => handleEndInternship(app)}
@@ -513,8 +542,36 @@ const CompanyApplications = () => {
                   </div>
                 </div>
 
-                {/* Decision Area */}
-                <div className="pt-10 border-t border-gray-50 flex flex-col md:flex-row gap-4">
+                {/* Decisions & Documents */}
+                <div className="pt-10 border-t border-gray-100 flex flex-col gap-4">
+                  {(reviewModal.app.status === 'VALIDATED' || reviewModal.app.status === 'ONGOING' || reviewModal.app.status === 'COMPLETED') && (
+                    <div className="flex flex-col md:flex-row gap-4 mb-4">
+                      {reviewModal.app.pdfUrl && (
+                        <a 
+                          href={reviewModal.app.pdfUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex-1 flex items-center justify-center gap-3 py-4 bg-blue-50 text-blue-600 rounded-xl hover:bg-blue-600 hover:text-white transition-all font-bold text-[10px] uppercase tracking-widest border border-blue-100/50"
+                        >
+                          <Download size={16} />
+                          Download Agreement
+                        </a>
+                      )}
+                      {reviewModal.app.certificateUrl && (
+                        <a 
+                          href={reviewModal.app.certificateUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex-1 flex items-center justify-center gap-3 py-4 bg-purple-50 text-purple-600 rounded-xl hover:bg-purple-600 hover:text-white transition-all font-bold text-[10px] uppercase tracking-widest border border-purple-100/50"
+                        >
+                          <Download size={16} />
+                          View Certificate
+                        </a>
+                      )}
+                    </div>
+                  )}
+
+                  <div className="flex flex-col md:flex-row gap-4">
                   {reviewModal.app.status === 'PENDING' ? (
                     <>
                       <button 
@@ -541,12 +598,30 @@ const CompanyApplications = () => {
                       </button>
                     </>
                   ) : (
-                    <div className={`w-full py-5 rounded-[1.5rem] text-center font-bold text-[11px] uppercase tracking-widest border ${
-                      reviewModal.app.status === 'ACCEPTED' ? 'bg-green-50 text-green-600 border-green-100' : 'bg-red-50 text-red-500 border-red-100'
-                    }`}>
-                      Application Status: {reviewModal.app.status}
+                    <div className="flex flex-col w-full gap-4">
+                      <div className={`w-full py-5 rounded-[1.5rem] text-center font-bold text-[11px] uppercase tracking-widest border ${
+                        ['ACCEPTED', 'VALIDATED', 'ONGOING', 'COMPLETED'].includes(reviewModal.app.status) 
+                          ? 'bg-green-50 text-green-600 border-green-100' 
+                          : 'bg-red-50 text-red-500 border-red-100'
+                      }`}>
+                        Application Status: {reviewModal.app.status}
+                      </div>
+                      
+                      {(reviewModal.app.status === 'VALIDATED' || reviewModal.app.status === 'ONGOING') && reviewModal.app.internshipId && (
+                        <button 
+                          onClick={() => {
+                            handleEndInternship(reviewModal.app!);
+                            setReviewModal({ isOpen: false, app: null });
+                          }}
+                          className="w-full py-5 bg-orange-500 text-white rounded-[1.5rem] font-bold text-[11px] uppercase tracking-widest hover:bg-orange-600 transition-all flex items-center justify-center gap-3 shadow-xl shadow-orange-500/10"
+                        >
+                          <Clock size={18} />
+                          Mark as Physically Finished
+                        </button>
+                      )}
                     </div>
                   )}
+                  </div>
                 </div>
               </div>
             </motion.div>

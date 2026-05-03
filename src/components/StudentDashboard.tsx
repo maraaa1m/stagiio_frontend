@@ -16,7 +16,8 @@ import {
   ChevronRight,
   Loader2,
   ExternalLink,
-  Plus
+  Plus,
+  Download
 } from 'lucide-react';
 import { useNavigate, Link } from 'react-router-dom';
 import api from '@/api';
@@ -36,12 +37,23 @@ interface ApplicationStats {
   avgMatchScore: number;
 }
 
+interface ActiveInternship {
+  id: number;
+  offerTitle: string;
+  companyName: string;
+  status: string;
+  startDate: string;
+  endDate: string;
+  pdfUrl?: string;
+  certificateUrl?: string;
+}
+
 interface Offer {
   id: number;
   title: string;
   companyName: string;
-  wilaya: string;
-  type: 'Online' | 'On-site';
+  willaya: string;
+  type: string;
   skills: string[];
   matchScore: number;
   daysLeft?: number;
@@ -54,6 +66,7 @@ const StudentDashboard = () => {
   const navigate = useNavigate();
   const [profile, setProfile] = useState<StudentProfile | null>(null);
   const [stats, setStats] = useState<ApplicationStats | null>(null);
+  const [activeInternship, setActiveInternship] = useState<ActiveInternship | null>(null);
   const [recommendedOffers, setRecommendedOffers] = useState<Offer[]>([]);
   const [expiringOffers, setExpiringOffers] = useState<Offer[]>([]);
   const [unreadNotifications, setUnreadNotifications] = useState(0);
@@ -95,11 +108,26 @@ const StudentDashboard = () => {
           const apps = Array.isArray(statsRes.value.data) ? statsRes.value.data : [];
           const sent = apps.length;
           const pending = apps.filter((a: any) => (a.status || '').toUpperCase() === 'PENDING').length;
-          const accepted = apps.filter((a: any) => (a.status || '').toUpperCase() === 'ACCEPTED').length;
+          const accepted = apps.filter((a: any) => ['ACCEPTED', 'VALIDATED', 'ONGOING', 'PENDING_CERT', 'COMPLETED'].includes((a.status || '').toUpperCase())).length;
           const avgMatchScore = apps.length > 0
             ? Math.round(apps.reduce((sum: number, a: any) => sum + (a.matchingScore || a.matching_score || 0), 0) / apps.length)
             : 0;
           setStats({ sent, pending, accepted, avgMatchScore });
+
+          // Find active internship
+          const active = apps.find((a: any) => ['VALIDATED', 'ONGOING', 'PENDING_CERT', 'COMPLETED'].includes((a.status || '').toUpperCase()));
+          if (active) {
+            setActiveInternship({
+              id: active.id,
+              offerTitle: active.offer_title || active.offer || '',
+              companyName: active.company_name || active.company || '',
+              status: active.status,
+              startDate: active.internship?.startDate || active.internship?.start_date || '',
+              endDate: active.internship?.endDate || active.internship?.end_date || '',
+              pdfUrl: active.pdf_url || active.pdfUrl || active.internship?.pdf_url || active.internship?.agreement_url,
+              certificateUrl: active.certificate_url || active.certificateUrl || active.internship?.certificate_url || active.internship?.pdf_certificate,
+            });
+          }
         }
 
         if (recommendedRes.status === 'fulfilled') {
@@ -108,8 +136,8 @@ const StudentDashboard = () => {
           const mapped = offersArray.map((o: any) => ({
             id: o.offer_id || o.id,
             title: o.title,
-            companyName: o.company || o.company_name,
-            wilaya: o.willaya || o.wilaya,
+            companyName: o.company || o.companyName || o.company_name,
+            willaya: o.willaya || o.wilaya,
             type: o.type,
             skills: o.requiredSkills || o.required_skills || [],
             matchScore: o.matchingScore || o.matching_score || 0
@@ -201,6 +229,59 @@ const StudentDashboard = () => {
         />
 
         <div className="p-12 space-y-12 max-w-7xl mx-auto">
+          {/* Active Internship Row */}
+          {activeInternship && (
+            <motion.div 
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="bg-white p-10 rounded-[3rem] border border-blue-100 shadow-premium group relative overflow-hidden"
+            >
+              <div className="absolute top-0 right-0 w-64 h-64 bg-blue-600/5 rounded-full -mr-32 -mt-32 pointer-events-none" />
+              
+              <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-8 relative z-10">
+                <div className="flex items-center gap-8">
+                  <div className="w-20 h-20 rounded-[2rem] bg-navy-900 flex items-center justify-center text-white shadow-2xl shadow-navy-900/20 group-hover:bg-blue-600 transition-colors duration-500">
+                    <Briefcase size={32} />
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-3 mb-2">
+                      <h3 className="text-2xl font-display font-bold text-navy-900 tracking-tight">{activeInternship.companyName}</h3>
+                      <div className="px-3 py-1 bg-blue-50 text-blue-600 rounded-xl text-[9px] font-bold uppercase tracking-widest border border-blue-100/50">
+                        {activeInternship.status}
+                      </div>
+                    </div>
+                    <p className="text-lg font-medium text-navy-900/60">{activeInternship.offerTitle}</p>
+                  </div>
+                </div>
+
+                <div className="flex flex-col md:flex-row items-center gap-4">
+                  {activeInternship.pdfUrl && (
+                    <a 
+                      href={activeInternship.pdfUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="w-full md:w-auto px-8 py-4 bg-navy-900 text-white rounded-2xl font-bold text-[11px] uppercase tracking-widest hover:bg-blue-600 transition-all shadow-xl shadow-navy-900/10 flex items-center justify-center gap-3"
+                    >
+                      <Download size={18} />
+                      Download Agreement
+                    </a>
+                  )}
+                  {activeInternship.certificateUrl && (
+                    <a 
+                      href={activeInternship.certificateUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="w-full md:w-auto px-8 py-4 bg-emerald-600 text-white rounded-2xl font-bold text-[11px] uppercase tracking-widest hover:bg-navy-900 transition-all shadow-xl shadow-emerald-600/10 flex items-center justify-center gap-3"
+                    >
+                      <Download size={18} />
+                      Download Certificate
+                    </a>
+                  )}
+                </div>
+              </div>
+            </motion.div>
+          )}
+
           {/* Stats Row */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             {[
@@ -311,13 +392,13 @@ const StudentDashboard = () => {
                     <div className="flex flex-wrap gap-3 mb-10 relative z-10">
                       <div className="flex items-center gap-2.5 px-4 py-2 bg-paper rounded-xl text-[10px] font-bold text-black/40 uppercase tracking-widest border border-gray-50">
                         <MapPin size={14} />
-                        {offer.wilaya}
+                        {offer.willaya}
                       </div>
                       <div className="flex items-center gap-2.5 px-4 py-2 bg-paper rounded-xl text-[10px] font-bold text-black/40 uppercase tracking-widest border border-gray-100">
                         <Briefcase size={14} />
                         {offer.type}
                       </div>
-                      {offer.skills.slice(0, 3).map(skill => (
+                      {(offer.skills || []).slice(0, 3).map(skill => (
                         <div key={skill} className="px-4 py-2 bg-blue-50 text-blue-600 rounded-xl text-[10px] font-bold uppercase tracking-widest border border-blue-100/30">
                           {skill}
                         </div>
