@@ -31,7 +31,14 @@ const AdminAgreements = () => {
     if (token) {
       try {
         const decoded: any = jwtDecode(token);
-        const dept = storedDeptId || decoded.department_id || decoded.department;
+        const dept = decoded.department_id || decoded.department || null;
+        
+        if (dept) {
+          localStorage.setItem('department_id', dept.toString());
+        } else {
+          localStorage.removeItem('department_id');
+        }
+
         setIsSuperAdmin(!dept || dept === 'DEAN' || dept === 'null');
       } catch (e) {
         setIsSuperAdmin(true);
@@ -46,8 +53,8 @@ const AdminAgreements = () => {
         setAgreements(data.map((a: any) => ({
           id: a.id,
           student: (typeof a.student === 'object' ? `${a.student?.firstName || ''} ${a.student?.lastName || ''}`.trim() : String(a.student || '')) || a.studentName || '—',
-          company: a.companyName || a.company?.companyName || '—',
-          offer: a.offerTitle || a.offer?.title || '—',
+          company: a.companyName || (typeof a.company === 'object' ? a.company?.companyName : a.company) || '—',
+          offer: a.offerTitle || (typeof a.offer === 'object' ? a.offer?.title : a.offer) || '—',
           generatedOn: a.validatedAt || a.created_at || a.generatedOn || '—',
           pdfUrl: a.pdfUrl || a.pdf_url || a.url || null
         })));

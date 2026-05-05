@@ -96,8 +96,16 @@ const AdminDashboard = () => {
     if (token) {
       try {
         const decoded: any = jwtDecode(token);
-        // Dean Mode: If department_id is null or 'DEAN', it unlocks restricted view
-        const dept = storedDeptId || decoded.department_id || decoded.department;
+        // Prioritize token values, fallback to localStorage only if token doesn't have it
+        const dept = decoded.department_id || decoded.department || null;
+        
+        if (dept) {
+          localStorage.setItem('department_id', dept.toString());
+        } else {
+          // If token says null, it's superadmin, ensure localStorage is cleared
+          localStorage.removeItem('department_id');
+        }
+
         setAdminDept(dept ? dept.toString() : 'DEAN');
         setIsSuperAdmin(!dept || dept === 'DEAN' || dept === 'null');
       } catch (e) {
@@ -325,9 +333,7 @@ const AdminDashboard = () => {
   };
 
   const handleSignOut = () => {
-    localStorage.removeItem('access_token');
-    localStorage.removeItem('refresh_token');
-    localStorage.removeItem('user_role');
+    localStorage.clear();
     navigate('/login');
   };
 

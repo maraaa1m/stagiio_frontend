@@ -20,6 +20,7 @@ import {
 import { useNavigate, Link } from 'react-router-dom';
 import api from '@/api';
 import { toast, Toaster } from 'sonner';
+import { useProfileGuard } from '@/lib/profileGuard';
 import { ALGERIA_WILAYAS, OFFER_TYPES, SORT_OPTIONS } from '../constants';
 
 interface Offer {
@@ -39,7 +40,8 @@ import StudentHeader from './StudentHeader';
 
 const SearchOffers = () => {
   const navigate = useNavigate();
-  const [profile, setProfile] = useState<{ firstName: string; lastName: string; photoUrl?: string } | null>(null);
+  const { checkProfileComplete } = useProfileGuard();
+  const [profile, setProfile] = useState<{ firstName: string; lastName: string; photoUrl?: string; skills: any[] } | null>(null);
   const [offers, setOffers] = useState<Offer[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
@@ -56,7 +58,8 @@ const SearchOffers = () => {
         setProfile({
           firstName: pData.firstName || pData.first_name,
           lastName: pData.lastName || pData.last_name,
-          photoUrl: pData.profile_photo || pData.photoUrl || pData.photo || ''
+          photoUrl: pData.profile_photo || pData.photoUrl || pData.photo || '',
+          skills: pData.skills || []
         });
       } catch (err) {
         console.error('Error fetching profile:', err);
@@ -69,16 +72,22 @@ const SearchOffers = () => {
     setIsLoading(true);
     
     try {
-      let url = '/api/offers/recommended/';
+      // Use the generic offers list endpoint for better filtering support
+      let url = '/api/offers/';
       const params = new URLSearchParams();
-      if (selectedWilaya !== 'ALL') params.append('wilaya', selectedWilaya);
+      
+      if (selectedWilaya !== 'ALL') {
+        params.append('wilaya', selectedWilaya);
+        params.append('willaya', selectedWilaya); // Support both spellings
+      }
+      
       if (selectedType !== 'ALL') params.append('type', selectedType);
       if (searchQuery) params.append('search', searchQuery);
       
       if (params.toString()) url += `?${params.toString()}`;
       
       const response = await api.get(url);
-      const data = Array.isArray(response.data) ? response.data : (response.data?.offers || []);
+      const data = Array.isArray(response.data) ? response.data : (response.data?.offers || response.data?.results || []);
       
       // Map data to handle snake_case
       const mappedData = data.map((o: any) => ({
@@ -113,6 +122,7 @@ const SearchOffers = () => {
   }, [selectedWilaya, selectedType, sortBy, searchQuery]);
 
   const handleApply = async (offerId: number) => {
+    if (!checkProfileComplete(profile?.skills || [])) return;
     setIsApplying(offerId);
     try {
       await api.post('/api/applications/apply/', { offer_id: offerId });

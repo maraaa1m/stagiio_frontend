@@ -53,7 +53,14 @@ const AdminStudents = () => {
     if (token) {
       try {
         const decoded: any = jwtDecode(token);
-        const dept = storedDeptId || decoded.department_id || decoded.department;
+        const dept = decoded.department_id || decoded.department || null;
+        
+        if (dept) {
+          localStorage.setItem('department_id', dept.toString());
+        } else {
+          localStorage.removeItem('department_id');
+        }
+
         setAdminDept(dept ? dept.toString() : 'DEAN');
         setIsSuperAdmin(!dept || dept === 'DEAN' || dept === 'null');
       } catch (e) {
@@ -133,9 +140,7 @@ const AdminStudents = () => {
   }, []);
 
   const handleSignOut = () => {
-    localStorage.removeItem('access_token');
-    localStorage.removeItem('refresh_token');
-    localStorage.removeItem('user_role');
+    localStorage.clear();
     navigate('/login');
   };
 

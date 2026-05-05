@@ -19,7 +19,8 @@ import {
   Loader2,
   AlertCircle,
   Briefcase,
-  XCircle
+  XCircle,
+  Download
 } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import api from '@/api';
@@ -32,6 +33,8 @@ interface AdminApplication {
   status: 'PENDING' | 'ACCEPTED' | 'REFUSED' | 'VALIDATED' | 'ONGOING' | 'PENDING_CERT' | 'COMPLETED';
   matchingScore: number;
   appliedAt: string;
+  pdfUrl?: string;
+  certificateUrl?: string;
   student: {
     id: number;
     firstName: string;
@@ -62,7 +65,14 @@ const AdminApplications = () => {
     if (token) {
       try {
         const decoded: any = jwtDecode(token);
-        const dept = storedDeptId || decoded.department_id || decoded.department;
+        const dept = decoded.department_id || decoded.department || null;
+        
+        if (dept) {
+          localStorage.setItem('department_id', dept.toString());
+        } else {
+          localStorage.removeItem('department_id');
+        }
+
         setAdminDept(dept ? dept.toString() : 'DEAN');
         setIsSuperAdmin(!dept || dept === 'DEAN' || dept === 'null');
       } catch (e) {
@@ -104,6 +114,8 @@ const AdminApplications = () => {
           status: rawStatus,
           matchingScore: a.score || a.matchingScore || a.matching_score || 0,
           appliedAt: a.appliedAt || a.applied_date || a.created_at || a.date_applied || '',
+          pdfUrl: a.pdf_url || a.pdfUrl || a.internship?.pdf_url || a.internship?.pdfUrl || a.internship?.agreement_url,
+          certificateUrl: a.certificate_url || a.certificateUrl || a.pdfCertificate || a.internship?.certificate_url || a.internship?.pdf_certificate,
           student: {
             id: studentObj.id || a.student_id || a.studentId || 0,
             firstName: (typeof studentObj === 'object' ? (studentObj.firstName || studentObj.first_name) : null) || a.student_first_name || a.first_name || studentName.split(' ')[0] || '',
@@ -221,9 +233,7 @@ const AdminApplications = () => {
   };
 
   const handleSignOut = () => {
-    localStorage.removeItem('access_token');
-    localStorage.removeItem('refresh_token');
-    localStorage.removeItem('user_role');
+    localStorage.clear();
     navigate('/login');
   };
 
@@ -459,6 +469,28 @@ const AdminApplications = () => {
                       </div>
 
                       <div className="flex items-center gap-2">
+                        {app.pdfUrl && (
+                          <a 
+                            href={app.pdfUrl} 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            className="p-3 bg-blue-50 text-blue-600 rounded-xl hover:bg-blue-600 hover:text-white transition-all border border-blue-100/50"
+                            title="Download Agreement"
+                          >
+                            <Download size={18} />
+                          </a>
+                        )}
+                        {app.certificateUrl && (
+                          <a 
+                            href={app.certificateUrl} 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            className="p-3 bg-purple-50 text-purple-600 rounded-xl hover:bg-purple-600 hover:text-white transition-all border border-purple-100/50"
+                            title="Download Certificate"
+                          >
+                            <Download size={18} />
+                          </a>
+                        )}
                         {app.status === 'ACCEPTED' && (
                           <button 
                             onClick={() => handleAutoValidate(app)}

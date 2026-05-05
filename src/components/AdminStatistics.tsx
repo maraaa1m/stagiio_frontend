@@ -98,7 +98,14 @@ const AdminStatistics = () => {
     if (token) {
       try {
         const decoded: any = jwtDecode(token);
-        const dept = storedDeptId || decoded.department_id || decoded.department;
+        const dept = decoded.department_id || decoded.department || null;
+        
+        if (dept) {
+          localStorage.setItem('department_id', dept.toString());
+        } else {
+          localStorage.removeItem('department_id');
+        }
+
         setIsSuperAdmin(!dept || dept === 'DEAN' || dept === 'null');
       } catch (e) {
         setIsSuperAdmin(true);
