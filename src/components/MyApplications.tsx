@@ -72,7 +72,7 @@ const MyApplications = () => {
           status: (a.status || '').toUpperCase(),
           matchingScore: a.matchingScore || a.matching_score || 0,
           offerTitle: a.offer_title || a.offerTitle || a.offer || '',
-          company: a.company_name || a.companyName || a.company || '',
+          company: typeof a.company_name === 'string' ? a.company_name : (typeof a.companyName === 'string' ? a.companyName : (typeof a.company === 'string' ? a.company : 'Unknown Company')),
           appliedAt: a.applied_date || a.appliedDate || a.application_date || a.created_at || '',
           pdfUrl: a.pdf_url || a.pdfUrl || a.internship?.pdf_url || a.internship?.pdfUrl || a.internship?.agreement_url,
           certificateUrl: a.certificate_url || a.certificateUrl || a.pdfCertificate || a.internship?.certificate_url || a.internship?.pdf_certificate || a.internship?.pdfCertificate,
@@ -112,7 +112,7 @@ const MyApplications = () => {
 
   const getStatusStyles = (status: string) => {
     switch (status) {
-      case 'PENDING': return 'bg-orange-50 text-orange-600 border-orange-100';
+      case 'PENDING': return 'bg-orange-50 text-orange-500 border-orange-100';
       case 'ACCEPTED': return 'bg-green-50 text-green-600 border-green-100';
       case 'REFUSED': return 'bg-red-50 text-red-500 border-red-100';
       case 'VALIDATED': return 'bg-blue-50 text-blue-600 border-blue-100';
@@ -167,7 +167,7 @@ const MyApplications = () => {
           </div>
 
           {/* Filter Tabs */}
-          <div className="flex items-center gap-2 p-1.5 bg-paper rounded-2xl w-fit border border-gray-100 overflow-x-auto">
+          <div className="flex items-center gap-2 p-1.5 py-2 px-4 bg-paper rounded-2xl w-fit border border-gray-100 overflow-x-auto">
             {['ALL', 'PENDING', 'ACCEPTED', 'VALIDATED', 'ONGOING', 'PENDING_CERT', 'COMPLETED', 'REFUSED'].map(tab => (
               <button
                 key={tab}
@@ -232,17 +232,42 @@ const MyApplications = () => {
                       <p className="text-sm font-bold text-navy-900 tracking-tight">{app.appliedAt}</p>
                     </div>
 
-                    <div className="px-5 py-2.5 rounded-2xl border border-gray-100 text-[11px] font-bold uppercase tracking-widest flex items-center gap-2.5 text-navy-900/40">
-                      <TrendingUp size={14} className="text-blue-600" />
-                      {app.matchingScore}% Match
+                    <div className="relative w-20 h-20 flex items-center justify-center shrink-0">
+                      <svg className="w-full h-full transform -rotate-90 drop-shadow-sm" viewBox="0 0 80 80">
+                        <circle
+                          cx="40"
+                          cy="40"
+                          r="34"
+                          stroke="currentColor"
+                          strokeWidth="8"
+                          fill="transparent"
+                          className="text-gray-100"
+                        />
+                        <circle
+                          cx="40"
+                          cy="40"
+                          r="34"
+                          stroke="currentColor"
+                          strokeWidth="8"
+                          fill="transparent"
+                          strokeDasharray={213.63}
+                          strokeDashoffset={213.63 - (213.63 * app.matchingScore) / 100}
+                          strokeLinecap="round"
+                          className="text-blue-600 transition-all duration-1000 ease-out"
+                        />
+                      </svg>
+                      <div className="absolute inset-0 flex flex-col items-center justify-center">
+                        <span className="text-[14px] font-display font-black text-navy-900 leading-none">{app.matchingScore}%</span>
+                        <span className="text-[7px] font-black uppercase tracking-widest text-navy-900/30 mt-0.5">MATCH</span>
+                      </div>
                     </div>
 
                     <div className="flex items-center gap-4">
                       <div className={`px-6 py-3 rounded-2xl border text-[10px] font-bold uppercase tracking-widest shadow-sm ${getStatusStyles(app.status)}`}>
-                        {app.status}
+                        {['VALIDATED', 'ACCEPTED', 'ONGOING'].includes(app.status.toUpperCase()) ? 'ONGOING' : app.status}
                       </div>
 
-                      {app.status === 'VALIDATED' && app.pdfUrl && (
+                      {(['VALIDATED', 'ONGOING', 'PENDING_CERT', 'COMPLETED'].includes(app.status)) && app.pdfUrl && (
                         <a 
                           href={app.pdfUrl} 
                           target="_blank" 
@@ -254,12 +279,12 @@ const MyApplications = () => {
                         </a>
                       )}
 
-                      {app.status === 'COMPLETED' && app.certificateUrl && (
+                      {(['PENDING_CERT', 'COMPLETED'].includes(app.status)) && app.certificateUrl && (
                         <a 
                           href={app.certificateUrl} 
                           target="_blank" 
                           rel="noopener noreferrer"
-                          className="px-6 py-3 bg-navy-900 text-white rounded-2xl text-[10px] font-bold uppercase tracking-widest hover:bg-blue-600 transition-all flex items-center gap-3 shadow-lg shadow-navy-900/10"
+                          className="px-6 py-3 bg-emerald-600 text-white rounded-2xl text-[10px] font-bold uppercase tracking-widest hover:bg-navy-900 transition-all flex items-center gap-3 shadow-lg shadow-emerald-600/10"
                         >
                           <Download size={14} />
                           Download Certificate

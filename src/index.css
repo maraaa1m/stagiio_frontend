@@ -5,11 +5,11 @@
   --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
   --font-display: "Space Grotesk", sans-serif;
 
-  --color-navy-900: #060D1F;
-  --color-navy-800: #0A1229;
+  --color-navy-900: #0A192F;
+  --color-navy-800: #112240;
   --color-blue-600: #2563EB;
   --color-blue-700: #1D4ED8;
-  --color-paper: #F8FAFC;
+  --color-paper: #E3EDF7;
   
   --shadow-premium: 0 20px 50px -12px rgba(0, 0, 0, 0.08);
   --shadow-premium-hover: 0 30px 60px -12px rgba(0, 0, 0, 0.12);

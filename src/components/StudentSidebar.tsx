@@ -3,9 +3,11 @@ import {
   LayoutDashboard, 
   Search, 
   ClipboardList, 
+  FileText,
   User, 
   Bell, 
-  LogOut
+  LogOut,
+  Zap
 } from 'lucide-react';
 import { useNavigate, Link, useLocation } from 'react-router-dom';
 import api from '@/api';
@@ -19,6 +21,7 @@ const StudentSidebar: React.FC<StudentSidebarProps> = ({ unreadNotifications: in
   const location = useLocation();
   const [unreadNotifications, setUnreadNotifications] = useState(initialUnreadCount || 0);
   const [profile, setProfile] = useState<{ firstName: string; lastName: string; photoUrl?: string } | null>(null);
+  const [hasActiveInternship, setHasActiveInternship] = useState(false);
 
   useEffect(() => {
     if (initialUnreadCount !== undefined) {
@@ -29,9 +32,10 @@ const StudentSidebar: React.FC<StudentSidebarProps> = ({ unreadNotifications: in
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [profileRes, notificationsRes] = await Promise.allSettled([
+        const [profileRes, notificationsRes, appsRes] = await Promise.allSettled([
           api.get('/api/student/profile/'),
-          api.get('/api/notifications/')
+          api.get('/api/notifications/'),
+          api.get('/api/student/my-applications/')
         ]);
 
         if (profileRes.status === 'fulfilled') {
@@ -45,6 +49,14 @@ const StudentSidebar: React.FC<StudentSidebarProps> = ({ unreadNotifications: in
 
         if (notificationsRes.status === 'fulfilled') {
           setUnreadNotifications(notificationsRes.value.data.count || 0);
+        }
+
+        if (appsRes.status === 'fulfilled') {
+          const apps = Array.isArray(appsRes.value.data) ? appsRes.value.data : (appsRes.value.data?.applications || []);
+          const hasActive = apps.some((a: any) => 
+            ['ONGOING', 'ACCEPTED', 'VALIDATED'].includes((a.status || '').toUpperCase())
+          );
+          setHasActiveInternship(hasActive);
         }
       } catch (err) {
         console.error('Error fetching sidebar data:', err);
@@ -69,7 +81,12 @@ const StudentSidebar: React.FC<StudentSidebarProps> = ({ unreadNotifications: in
     return `${profile.firstName?.[0] || ''}${profile.lastName?.[0] || ''}`.toUpperCase();
   };
 
-  const isActive = (path: string) => location.pathname === path;
+  const isActive = (path: string) => {
+    if (path === '/student/offers' && location.pathname.startsWith('/student/offers/')) {
+      return true;
+    }
+    return location.pathname === path;
+  };
 
   const NavLink = ({ to, icon: Icon, children, badge }: any) => (
     <Link 
@@ -107,8 +124,12 @@ const StudentSidebar: React.FC<StudentSidebarProps> = ({ unreadNotifications: in
         </div>
         
         <NavLink to="/student/dashboard" icon={LayoutDashboard}>Dashboard</NavLink>
+        {hasActiveInternship && (
+          <NavLink to="/student/internship" icon={Zap}>My Journey</NavLink>
+        )}
         <NavLink to="/student/offers" icon={Search}>Search Offers</NavLink>
         <NavLink to="/student/applications" icon={ClipboardList}>My Applications</NavLink>
+        <NavLink to="/student/documents" icon={FileText}>Internship Documents</NavLink>
         
         <div className="pt-8 pb-4 px-4">
           <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-white/20">Account</p>

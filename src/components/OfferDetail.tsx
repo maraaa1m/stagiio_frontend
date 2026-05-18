@@ -87,7 +87,7 @@ const OfferDetail = () => {
           setOffer({
             id: offerData.id,
             title: offerData.title,
-            company: offerData.company || offerData.companyName || offerData.company_name,
+            company: typeof offerData.company === 'string' ? offerData.company : (offerData.companyName || offerData.company_name || 'Unknown Company'),
             description: offerData.description,
             willaya: offerData.willaya || offerData.wilaya,
             type: offerData.type,
@@ -248,8 +248,12 @@ const OfferDetail = () => {
                     <CheckCircle2 size={28} />
                   </div>
                   <div>
-                    <h3 className="text-xl font-display font-bold text-navy-900 tracking-tight mb-1">Internship Active</h3>
-                    <p className="text-[11px] font-bold uppercase tracking-widest text-navy-900/40">You are currently placed in this position</p>
+                    <h3 className="text-xl font-display font-bold text-navy-900 tracking-tight mb-1">Internship Ongoing</h3>
+                    <p className="text-[11px] font-bold uppercase tracking-widest text-navy-900/40 opacity-70">
+                      {['VALIDATED', 'ACCEPTED', 'ONGOING'].includes(applicationDetails.status.toUpperCase()) 
+                        ? 'Your internship is currently active' 
+                        : 'You are currently placed in this position'}
+                    </p>
                   </div>
                 </div>
 
@@ -298,7 +302,7 @@ const OfferDetail = () => {
                       cy="64"
                       r="58"
                       stroke="currentColor"
-                      strokeWidth="12"
+                      strokeWidth="8"
                       fill="transparent"
                       className="text-gray-100"
                     />
@@ -307,7 +311,7 @@ const OfferDetail = () => {
                       cy="64"
                       r="58"
                       stroke="currentColor"
-                      strokeWidth="12"
+                      strokeWidth="8"
                       fill="transparent"
                       strokeDasharray={364.4}
                       strokeDashoffset={364.4 - (364.4 * matchReport.matchingScore) / 100}

@@ -352,7 +352,7 @@ const StudentProfile = () => {
                   <span>Profile Completion</span>
                   <span className="text-blue-600">{(profile?.completionPercentage ?? 0)}%</span>
                 </div>
-                <div className="h-2.5 bg-paper rounded-full overflow-hidden border border-gray-50">
+                <div className="h-4 bg-paper rounded-full border border-gray-100 p-1 flex items-center">
                   <motion.div 
                     initial={{ width: 0 }}
                     animate={{ width: `${profile?.completionPercentage || 0}%` }}
@@ -363,10 +363,10 @@ const StudentProfile = () => {
               </div>
             </div>
 
-            <div className="flex flex-col gap-3">
-              <label className="px-6 py-3 bg-paper text-black rounded-xl text-[10px] font-bold uppercase tracking-widest hover:bg-gray-100 transition-all cursor-pointer flex items-center gap-3 border border-gray-100">
+            <div className="flex flex-col gap-3 shrink-0">
+              <label className="h-11 px-6 bg-paper text-black rounded-xl text-[10px] font-bold uppercase tracking-widest hover:bg-gray-100 transition-all cursor-pointer flex items-center justify-center gap-3 border border-gray-100 min-w-[200px]">
                 <FileText size={16} className="text-blue-600" />
-                {profile?.cvUrl ? 'View / Update CV' : 'Upload CV'}
+                {profile?.cvUrl ? 'Update CV' : 'Upload CV'}
                 <input type="file" className="hidden" accept=".pdf,.doc,.docx" onChange={handleCVUpload} />
               </label>
               {profile?.cvUrl && (
@@ -374,7 +374,7 @@ const StudentProfile = () => {
                   href={profile.cvUrl} 
                   target="_blank" 
                   rel="noopener noreferrer"
-                  className="px-6 py-2 text-center text-[9px] font-bold uppercase tracking-widest text-blue-600 hover:text-black transition-all"
+                  className="h-11 px-6 flex items-center justify-center text-[10px] font-bold uppercase tracking-widest text-blue-600 hover:text-black hover:bg-blue-50/50 rounded-xl transition-all border border-transparent hover:border-blue-100/50"
                 >
                   View Current CV
                 </a>
@@ -392,7 +392,7 @@ const StudentProfile = () => {
                   <label className="text-[10px] font-bold uppercase tracking-widest text-black/30 ml-4">Phone Number</label>
                   <div className="relative group">
                     <div className="absolute left-5 top-1/2 -translate-y-1/2 text-black/30 group-focus-within:text-blue-600 transition-colors">
-                      <Phone size={16} />
+                      <Phone size={20} />
                     </div>
                     <input 
                       type="text"
@@ -408,7 +408,7 @@ const StudentProfile = () => {
                   <label className="text-[10px] font-bold uppercase tracking-widest text-black/30 ml-4">University</label>
                   <div className="relative group">
                     <div className={`absolute left-5 top-1/2 -translate-y-1/2 transition-colors ${isInstitutionalVerified ? 'text-blue-600/30' : 'text-black/30 group-focus-within:text-blue-600'}`}>
-                      <GraduationCap size={18} />
+                      <GraduationCap size={20} />
                     </div>
                     {isInstitutionalVerified ? (
                       <div className="w-full bg-blue-50/40 border border-blue-600/10 rounded-2xl py-4 pl-14 pr-12 font-bold text-black cursor-not-allowed select-none relative group">
@@ -436,7 +436,7 @@ const StudentProfile = () => {
                   <label className="text-[10px] font-bold uppercase tracking-widest text-black/30 ml-4">Department</label>
                   <div className="relative group">
                     <div className={`absolute left-5 top-1/2 -translate-y-1/2 transition-colors ${isInstitutionalVerified ? 'text-blue-600/30' : 'text-black/30 group-focus-within:text-blue-600'}`}>
-                      <ClipboardList size={18} />
+                      <ClipboardList size={20} />
                     </div>
                     {isInstitutionalVerified ? (
                       <div className="w-full bg-blue-50/40 border border-blue-600/10 rounded-2xl py-4 pl-14 pr-12 font-bold text-black cursor-not-allowed select-none relative group">
@@ -494,7 +494,7 @@ const StudentProfile = () => {
                   <label className="text-[10px] font-bold uppercase tracking-widest text-black/30 ml-4">GitHub Profile</label>
                   <div className="relative group">
                     <div className="absolute left-5 top-1/2 -translate-y-1/2 text-black/30 group-focus-within:text-blue-600 transition-colors">
-                      <Github size={16} />
+                      <Github size={20} />
                     </div>
                     <input 
                       type="text"
@@ -510,7 +510,7 @@ const StudentProfile = () => {
                   <label className="text-[10px] font-bold uppercase tracking-widest text-black/30 ml-4">Portfolio Link</label>
                   <div className="relative group">
                     <div className="absolute left-5 top-1/2 -translate-y-1/2 text-black/30 group-focus-within:text-blue-600 transition-colors">
-                      <Globe size={16} />
+                      <Globe size={20} />
                     </div>
                     <input 
                       type="text"

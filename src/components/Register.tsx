@@ -19,6 +19,7 @@ import {
 } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import api from '@/api';
+import { toast, Toaster } from 'sonner';
 import { ALGERIA_WILAYAS } from '../constants';
 
 const Register = () => {
@@ -74,6 +75,7 @@ const Register = () => {
         setUniversities(Array.isArray(data) ? data : []);
       } catch (err) {
         console.error('Failed to fetch universities:', err);
+        toast.error('Failed to load universities. Please check your connection.');
       } finally {
         setIsLoadingUniversities(false);
       }
@@ -93,6 +95,7 @@ const Register = () => {
       setFaculties(Array.isArray(data) ? data : []);
     } catch (err) {
       console.error('Failed to fetch faculties:', err);
+      toast.error('Failed to load faculties for this university.');
     } finally {
       setIsLoadingFaculties(false);
     }
@@ -109,6 +112,7 @@ const Register = () => {
       setDepartments(Array.isArray(data) ? data : []);
     } catch (err) {
       console.error('Failed to fetch departments:', err);
+      toast.error('Failed to load departments for this faculty.');
     } finally {
       setIsLoadingDepartments(false);
     }
@@ -117,7 +121,9 @@ const Register = () => {
   const handleStudentSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!studentData.email.endsWith('.dz')) {
-      setError('University email must end with .dz');
+      const msg = 'University email must end with .dz';
+      setError(msg);
+      toast.warning(msg);
       return;
     }
     
@@ -149,6 +155,7 @@ const Register = () => {
       const response = await api.post('/api/register/student/', payload);
       
       const data = response.data;
+      toast.success('Registration successful! Redirecting to profile setup...');
       const tokens = data.tokens || {};
       const access = tokens.access || data.access || data.token || data.access_token;
       const refresh = tokens.refresh || data.refresh || data.refresh_token;
@@ -164,7 +171,22 @@ const Register = () => {
       }
     } catch (err: any) {
       console.error('Registration error:', err);
-      setError(err.response?.data?.detail || 'Registration failed. Please try again.');
+      const errorData = err.response?.data;
+      let msg = 'Registration failed. Please try again.';
+      
+      if (errorData) {
+        if (typeof errorData === 'string') msg = errorData;
+        else if (errorData.detail) msg = errorData.detail;
+        else if (errorData.error) msg = errorData.error;
+        else if (typeof errorData === 'object') {
+          const firstKey = Object.keys(errorData)[0];
+          const firstError = errorData[firstKey];
+          msg = `${firstKey}: ${Array.isArray(firstError) ? firstError[0] : firstError}`;
+        }
+      }
+      
+      setError(msg);
+      toast.error(msg);
     } finally {
       setIsLoading(false);
     }
@@ -173,7 +195,9 @@ const Register = () => {
   const handleCompanySubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!companyData.registreCommerce) {
-      setError('Please upload your Registre de Commerce PDF.');
+      const msg = 'Please upload your Registre de Commerce PDF.';
+      setError(msg);
+      toast.warning(msg);
       return;
     }
 
@@ -195,6 +219,7 @@ const Register = () => {
         headers: { 'Content-Type': 'multipart/form-data' }
       });
       const data = response.data;
+      toast.success('Company registration submitted! Our team will review your application.');
       const tokens = data.tokens || {};
       const access = tokens.access || data.access || data.token || data.access_token;
       const refresh = tokens.refresh || data.refresh || data.refresh_token;
@@ -208,7 +233,23 @@ const Register = () => {
         navigate('/login');
       }
     } catch (err: any) {
-      setError(err.response?.data?.detail || 'Registration failed. Please try again.');
+      console.error('Company registration error:', err);
+      const errorData = err.response?.data;
+      let msg = 'Registration failed. Please try again.';
+      
+      if (errorData) {
+        if (typeof errorData === 'string') msg = errorData;
+        else if (errorData.detail) msg = errorData.detail;
+        else if (errorData.error) msg = errorData.error;
+        else if (typeof errorData === 'object') {
+          const firstKey = Object.keys(errorData)[0];
+          const firstError = errorData[firstKey];
+          msg = `${firstKey}: ${Array.isArray(firstError) ? firstError[0] : firstError}`;
+        }
+      }
+      
+      setError(msg);
+      toast.error(msg);
     } finally {
       setIsLoading(false);
     }
@@ -216,6 +257,7 @@ const Register = () => {
 
   return (
     <div className="min-h-screen bg-white flex flex-col relative overflow-hidden">
+      <Toaster position="top-right" richColors />
       {/* Navigation */}
       <nav className="fixed top-0 left-0 right-0 z-50 bg-white/80 backdrop-blur-md border-b border-gray-100">
         <div className="container mx-auto px-6 h-20 flex items-center justify-between">
@@ -302,7 +344,7 @@ const Register = () => {
                           type="text"
                           value={studentData.firstName}
                           onChange={(e) => setStudentData({ ...studentData, firstName: e.target.value })}
-                          placeholder="Ahmed"
+                          placeholder="First Name"
                           className="w-full bg-paper border border-gray-100 rounded-[2rem] py-5 pl-16 pr-8 outline-none focus:border-blue-600/30 focus:ring-8 focus:ring-blue-600/5 transition-all font-medium text-navy-900"
                         />
                       </div>
@@ -319,7 +361,7 @@ const Register = () => {
                           type="text"
                           value={studentData.lastName}
                           onChange={(e) => setStudentData({ ...studentData, lastName: e.target.value })}
-                          placeholder="Benali"
+                          placeholder="Last Name"
                           className="w-full bg-paper border border-gray-100 rounded-[2rem] py-5 pl-16 pr-8 outline-none focus:border-blue-600/30 focus:ring-8 focus:ring-blue-600/5 transition-all font-medium text-navy-900"
                         />
                       </div>
@@ -337,7 +379,7 @@ const Register = () => {
                         type="email"
                         value={studentData.email}
                         onChange={(e) => setStudentData({ ...studentData, email: e.target.value })}
-                        placeholder="a.benali@univ-constantine2.dz"
+                        placeholder="Exemple@univ-constantine2.dz"
                         className="w-full bg-paper border border-gray-100 rounded-[2rem] py-5 pl-16 pr-8 outline-none focus:border-blue-600/30 focus:ring-8 focus:ring-blue-600/5 transition-all font-medium text-navy-900"
                       />
                     </div>

@@ -11,6 +11,8 @@ import SearchOffers from "./components/SearchOffers";
 import OfferDetail from "./components/OfferDetail";
 import MyApplications from "./components/MyApplications";
 import StudentProfile from "./components/StudentProfile";
+import StudentDocuments from "./components/StudentDocuments";
+import ActiveInternship from "./components/ActiveInternship";
 import CompanyProfile from "./components/CompanyProfile";
 import ManageOffers from "./components/ManageOffers";
 import CompanyApplications from "./components/CompanyApplications";
@@ -50,6 +52,8 @@ export default function App() {
             <Route path="/student/offers/:id" element={<ProtectedRoute allowedRoles={['STUDENT']}><OfferDetail /></ProtectedRoute>} />
             <Route path="/student/applications" element={<ProtectedRoute allowedRoles={['STUDENT']}><MyApplications /></ProtectedRoute>} />
             <Route path="/student/profile" element={<ProtectedRoute allowedRoles={['STUDENT']}><StudentProfile /></ProtectedRoute>} />
+            <Route path="/student/documents" element={<ProtectedRoute allowedRoles={['STUDENT']}><StudentDocuments /></ProtectedRoute>} />
+            <Route path="/student/internship" element={<ProtectedRoute allowedRoles={['STUDENT']}><ActiveInternship /></ProtectedRoute>} />
             <Route path="/student/notifications" element={<ProtectedRoute allowedRoles={['STUDENT']}><NotificationsPage /></ProtectedRoute>} />
             <Route path="/notifications" element={<ProtectedRoute allowedRoles={['STUDENT', 'COMPANY', 'ADMIN']}><NotificationsPage /></ProtectedRoute>} />
             

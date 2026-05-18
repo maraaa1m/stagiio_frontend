@@ -11,6 +11,7 @@ import {
 } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import api from '@/api';
+import { toast, Toaster } from 'sonner';
 
 interface Skill {
   id: number;
@@ -22,8 +23,6 @@ const ProfileSetup = () => {
   const [selectedSkills, setSelectedSkills] = useState<number[]>([]);
   const [github, setGithub] = useState('');
   const [portfolio, setPortfolio] = useState('');
-  const [idCard, setIdCard] = useState('');
-  const [ssn, setSsn] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isFetching, setIsFetching] = useState(true);
   const [error, setError] = useState('');
@@ -40,7 +39,9 @@ const ProfileSetup = () => {
         setAvailableSkills(skillsData);
       } catch (err) {
         console.error('Failed to fetch skills:', err);
-        setError('Failed to load skills. Please check your connection.');
+        const msg = 'Failed to load skills. Please check your connection.';
+        setError(msg);
+        toast.error(msg);
       } finally {
         setIsFetching(false);
       }
@@ -60,10 +61,6 @@ const ProfileSetup = () => {
       setError('Please select at least one technical skill.');
       return;
     }
-    if (!idCard) {
-      setError('Student ID Card Number is required.');
-      return;
-    }
 
     setIsLoading(true);
     setError('');
@@ -72,19 +69,29 @@ const ProfileSetup = () => {
       await api.put('/api/student/update/', {
         skills: selectedSkills,
         githubLink: github,
-        portfolioLink: portfolio,
-        IDCardNumber: idCard,
-        id_card_number: idCard,
-        idCardNumber: idCard,
-        socialSecurityNumber: ssn,
-        social_security_number: ssn
+        portfolioLink: portfolio
       });
       
+      toast.success('Technical profile updated successfully!');
       localStorage.setItem('profileComplete', 'true');
       navigate('/profile/media');
     } catch (err: any) {
       console.error('Profile update error:', err);
-      setError(err.response?.data?.detail || 'Failed to update profile. Please try again.');
+      const errorData = err.response?.data;
+      let msg = 'Failed to update profile. Please try again.';
+      
+      if (errorData) {
+        if (typeof errorData === 'string') msg = errorData;
+        else if (errorData.detail) msg = errorData.detail;
+        else if (typeof errorData === 'object') {
+          const firstKey = Object.keys(errorData)[0];
+          const firstError = errorData[firstKey];
+          msg = `${firstKey}: ${Array.isArray(firstError) ? firstError[0] : firstError}`;
+        }
+      }
+      
+      setError(msg);
+      toast.error(msg);
     } finally {
       setIsLoading(false);
     }
@@ -97,6 +104,7 @@ const ProfileSetup = () => {
 
   return (
     <div className="min-h-screen bg-paper flex items-center justify-center px-6 py-20 relative overflow-hidden">
+      <Toaster position="top-right" richColors />
       {/* Background elements */}
       <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-full -z-10">
         <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-blue-100/40 rounded-full blur-[120px]" />
@@ -227,46 +235,6 @@ const ProfileSetup = () => {
                     value={portfolio}
                     onChange={(e) => setPortfolio(e.target.value)}
                     placeholder="https://yourportfolio.com"
-                    className="w-full bg-paper border border-gray-100 rounded-2xl py-4 pl-14 pr-6 outline-none focus:border-blue-600/30 focus:ring-4 focus:ring-blue-600/5 transition-all font-medium text-navy-900"
-                  />
-                </div>
-              </div>
-
-              {/* ID Card Number */}
-              <div className="space-y-2">
-                <label className="text-[11px] font-bold uppercase tracking-widest text-navy-900/40 ml-4">
-                  ID Card Number <span className="text-red-500">*</span>
-                </label>
-                <div className="relative group">
-                  <div className="absolute left-5 top-1/2 -translate-y-1/2 text-navy-900/30 group-focus-within:text-blue-600 transition-colors">
-                    <CreditCard size={18} />
-                  </div>
-                  <input 
-                    required
-                    type="text"
-                    value={idCard}
-                    onChange={(e) => setIdCard(e.target.value)}
-                    placeholder="Enter your student ID"
-                    className="w-full bg-paper border border-gray-100 rounded-2xl py-4 pl-14 pr-6 outline-none focus:border-blue-600/30 focus:ring-4 focus:ring-blue-600/5 transition-all font-medium text-navy-900"
-                  />
-                </div>
-              </div>
-
-              {/* Social Security Number */}
-              <div className="space-y-2">
-                <label className="text-[11px] font-bold uppercase tracking-widest text-navy-900/40 ml-4">
-                  Social Security Number <span className="text-red-500">*</span>
-                </label>
-                <div className="relative group">
-                  <div className="absolute left-5 top-1/2 -translate-y-1/2 text-navy-900/30 group-focus-within:text-blue-600 transition-colors">
-                    <CreditCard size={18} />
-                  </div>
-                  <input 
-                    required
-                    type="text"
-                    value={ssn}
-                    onChange={(e) => setSsn(e.target.value)}
-                    placeholder="Enter your SSN"
                     className="w-full bg-paper border border-gray-100 rounded-2xl py-4 pl-14 pr-6 outline-none focus:border-blue-600/30 focus:ring-4 focus:ring-blue-600/5 transition-all font-medium text-navy-900"
                   />
                 </div>

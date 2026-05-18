@@ -4,6 +4,7 @@ import { Eye, EyeOff, Mail, Lock, ArrowRight, Loader2 } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import api from '@/api';
 import { jwtDecode } from 'jwt-decode';
+import { toast, Toaster } from 'sonner';
 
 const Login = () => {
   const [showPassword, setShowPassword] = useState(false);
@@ -41,25 +42,38 @@ const Login = () => {
       if (refresh) localStorage.setItem('refresh_token', refresh);
       
       let role = response.data.role;
-      let deptId = response.data.department_id || response.data.department;
+      let deptId = response.data.department_id !== undefined ? response.data.department_id : response.data.department;
       
       // Secondary extraction from JWT decoded body
       try {
         const decoded: any = jwtDecode(access);
         role = role || decoded.role || decoded.user_role || decoded.groups?.[0];
-        deptId = deptId || decoded.department_id || decoded.department;
+        if (deptId === undefined || deptId === null) {
+          deptId = decoded.department_id !== undefined ? decoded.department_id : decoded.department;
+        }
         
         if (role) localStorage.setItem('user_role', role);
-        if (deptId) localStorage.setItem('department_id', deptId.toString());
+        
+        if (deptId !== null && deptId !== undefined && deptId !== 'null' && deptId !== '') {
+          localStorage.setItem('department_id', deptId.toString());
+        } else {
+          localStorage.removeItem('department_id');
+        }
       } catch (e) {
         console.error('Failed to decode token:', e);
       }
 
       // Routing logic
-      if (role === 'STUDENT') navigate('/student/dashboard');
-      else if (role === 'COMPANY') navigate('/company/dashboard');
+      if (role === 'STUDENT') {
+        toast.success('Login successful!');
+        navigate('/student/dashboard');
+      }
+      else if (role === 'COMPANY') {
+        toast.success('Welcome back!');
+        navigate('/company/dashboard');
+      }
       else if (role === 'ADMIN') {
-        // If deptId is null, it unlocks Superadmin/Dean Mode
+        toast.success('Admin access granted');
         navigate('/admin/dashboard');
       }
       else {
@@ -71,7 +85,23 @@ const Login = () => {
       
     } catch (err: any) {
       console.error('Login error:', err);
-      setError(err.response?.data?.detail || 'Invalid credentials. Please try again.');
+      const errorData = err.response?.data;
+      let msg = 'Invalid credentials. Please try again.';
+      
+      if (errorData) {
+        if (typeof errorData === 'string') msg = errorData;
+        else if (errorData.detail) msg = errorData.detail;
+        else if (errorData.error) msg = errorData.error;
+        else if (typeof errorData === 'object') {
+          // Handle field specific errors from Django
+          const firstKey = Object.keys(errorData)[0];
+          const firstError = errorData[firstKey];
+          msg = `${firstKey}: ${Array.isArray(firstError) ? firstError[0] : firstError}`;
+        }
+      }
+      
+      setError(msg);
+      toast.error(msg);
     } finally {
       setIsLoading(false);
     }
@@ -79,6 +109,7 @@ const Login = () => {
 
   return (
     <div className="min-h-screen bg-white flex flex-col relative overflow-hidden">
+      <Toaster position="top-right" richColors />
       {/* Navigation */}
       <nav className="fixed top-0 left-0 right-0 z-50 bg-white/80 backdrop-blur-md border-b border-gray-100">
         <div className="container mx-auto px-6 h-20 flex items-center justify-between">
@@ -135,9 +166,12 @@ const Login = () => {
                     required
                     type="email"
                     value={formData.email}
-                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                    onChange={(e) => {
+                      setFormData({ ...formData, email: e.target.value });
+                      if (error) setError('');
+                    }}
                     placeholder="name@example.dz"
-                    className="w-full bg-paper border border-gray-100 rounded-[2rem] py-5 pl-16 pr-8 outline-none focus:border-blue-600/30 focus:ring-8 focus:ring-blue-600/5 transition-all font-medium text-navy-900"
+                    className={`w-full bg-paper border ${error ? 'border-red-200 focus:ring-red-600/5 focus:border-red-600/30' : 'border-gray-100 focus:border-blue-600/30 focus:ring-8 focus:ring-blue-600/5'} rounded-[2rem] py-5 pl-16 pr-8 outline-none transition-all font-medium text-navy-900`}
                   />
                 </div>
               </div>
@@ -159,9 +193,12 @@ const Login = () => {
                     required
                     type={showPassword ? "text" : "password"}
                     value={formData.password}
-                    onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                    onChange={(e) => {
+                      setFormData({ ...formData, password: e.target.value });
+                      if (error) setError('');
+                    }}
                     placeholder="••••••••"
-                    className="w-full bg-paper border border-gray-100 rounded-[2rem] py-5 pl-16 pr-16 outline-none focus:border-blue-600/30 focus:ring-8 focus:ring-blue-600/5 transition-all font-medium text-navy-900"
+                    className={`w-full bg-paper border ${error ? 'border-red-200 focus:ring-red-600/5 focus:border-red-600/30' : 'border-gray-100 focus:border-blue-600/30 focus:ring-8 focus:ring-blue-600/5'} rounded-[2rem] py-5 pl-16 pr-16 outline-none transition-all font-medium text-navy-900`}
                   />
                   <button 
                     type="button"

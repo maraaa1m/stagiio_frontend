@@ -12,6 +12,7 @@ import {
   LogOut,
   LayoutDashboard,
   ArrowRight,
+  ChevronRight,
   Building2,
   Mail,
   Send,
@@ -29,9 +30,9 @@ const Navbar = ({ user, handleLogout, getDashboardLink, getProfileLink }: any) =
   const navigate = useNavigate();
   
   // Floating effect values
-  const width = useTransform(scrollY, [0, 100], ["100%", "90%"]);
+  const width = useTransform(scrollY, [0, 100], ["100%", "95%"]);
   const top = useTransform(scrollY, [0, 100], ["0px", "20px"]);
-  const borderRadius = useTransform(scrollY, [0, 100], ["0px", "100px"]);
+  const borderRadius = useTransform(scrollY, [0, 100], ["0px", "32px"]);
   const boxShadow = useTransform(scrollY, [0, 100], ["none", "0 20px 50px -12px rgba(0, 0, 0, 0.08)"]);
   const backgroundColor = useTransform(scrollY, [0, 100], ["rgba(255, 255, 255, 0)", "rgba(255, 255, 255, 0.9)"]);
   const border = useTransform(scrollY, [0, 100], ["1px solid rgba(255,255,255,0)", "1px solid rgba(255,255,255,0.2)"]);
@@ -290,7 +291,7 @@ const Hero = ({ user, getDashboardLink }: any) => {
               )}
             </h1>
             
-            <p className="text-xl text-navy-900/50 mb-12 max-w-xl leading-relaxed font-medium">
+            <p className="text-xl text-navy-900/70 mb-12 max-w-xl leading-relaxed font-medium">
               {user 
                 ? `You're signed in as a ${user.role.toLowerCase()}. Ready to continue your journey?`
                 : "We connect the brightest Algerian minds with industry leaders through an intelligent, data-driven matching ecosystem."
@@ -366,18 +367,18 @@ const Hero = ({ user, getDashboardLink }: any) => {
 
 const BentoStats = () => {
   return (
-    <section className="py-24 bg-white">
+    <section className="py-24 bg-paper">
       <div className="container mx-auto px-6">
         <div className="grid md:grid-cols-4 gap-6">
-          <div className="md:col-span-2 bg-paper p-10 rounded-[2.5rem] border border-gray-100 flex flex-col justify-between group hover:border-blue-600/20 transition-colors">
+          <div className="md:col-span-2 bg-white p-10 rounded-[2.5rem] border border-gray-100 flex flex-col justify-between group hover:border-blue-600/20 transition-colors">
             <div>
               <div className="w-14 h-14 rounded-2xl bg-blue-600/10 text-blue-600 flex items-center justify-center mb-8">
                 <Users size={28} />
               </div>
               <h3 className="text-4xl font-display font-bold text-navy-900 mb-2">12,400+</h3>
-              <p className="text-navy-900/40 font-bold uppercase tracking-widest text-[11px]">Registered Students</p>
+              <p className="text-navy-900/60 font-bold uppercase tracking-widest text-[11px]">Registered Students</p>
             </div>
-            <p className="mt-8 text-navy-900/60 font-medium leading-relaxed">
+            <p className="mt-8 text-navy-900/70 font-medium leading-relaxed">
               The largest network of academic talent in Algeria, spanning across all 58 Wilayas.
             </p>
           </div>
@@ -431,7 +432,7 @@ const Process = () => {
       <div className="container mx-auto px-6">
         <div className="text-center mb-24">
           <h2 className="text-4xl md:text-6xl font-display font-bold text-navy-900 mb-6 tracking-tighter">Engineered for Excellence</h2>
-          <p className="text-navy-900/40 font-medium max-w-2xl mx-auto text-lg">We've redesigned the internship lifecycle from the ground up.</p>
+          <p className="text-navy-900/60 font-medium max-w-2xl mx-auto text-lg">We've redesigned the internship lifecycle from the ground up.</p>
         </div>
 
         <div className="grid md:grid-cols-3 gap-12">
@@ -444,7 +445,7 @@ const Process = () => {
                 <div className="absolute -top-4 -right-4 text-7xl font-display font-black text-navy-900/[0.03] select-none">0{i + 1}</div>
               </div>
               <h3 className="text-2xl font-display font-bold text-navy-900 mb-4">{step.title}</h3>
-              <p className="text-navy-900/50 leading-relaxed font-medium">{step.desc}</p>
+              <p className="text-navy-900/60 leading-relaxed font-medium">{step.desc}</p>
             </div>
           ))}
         </div>
@@ -456,9 +457,9 @@ const Process = () => {
 const CTA = () => {
   const navigate = useNavigate();
   return (
-    <section className="py-32 bg-white">
+    <section className="py-32 bg-paper">
       <div className="container mx-auto px-6">
-        <div className="relative bg-navy-900 rounded-[4rem] p-16 md:p-32 overflow-hidden text-center">
+        <div className="relative bg-navy-900 rounded-[4rem] p-16 md:p-32 overflow-hidden text-center shadow-2xl shadow-navy-900/20">
           {/* Decorative background */}
           <div className="absolute inset-0 opacity-20">
             <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(circle_at_50%_50%,#2563EB,transparent_70%)]" />
@@ -500,46 +501,54 @@ const CTA = () => {
 
 const Footer = () => {
   return (
-    <footer className="bg-paper pt-32 pb-12 border-t border-gray-100">
-      <div className="container mx-auto px-6">
-        <div className="grid md:grid-cols-4 gap-16 mb-24">
-          <div className="md:col-span-2">
-            <div className="flex items-center gap-2.5 mb-8">
-              <div className="flex items-center gap-2">
-                <div className="w-2.5 h-2.5 rounded-full bg-blue-600"></div>
-                <span className="font-bold text-xl text-navy-900">Stag<span className="text-blue-600">.io</span></span>
-              </div>
-            </div>
-            <p className="text-navy-900/40 font-medium max-w-sm leading-relaxed">
-              Empowering the Algerian academic community by bridging the gap between education and industry.
-            </p>
-          </div>
-          
-          <div>
-            <h4 className="text-[11px] font-bold uppercase tracking-[0.2em] text-navy-900 mb-8">Platform</h4>
-            <ul className="space-y-4">
-              {["Find Internships", "For Companies", "University Portal", "Success Stories"].map(item => (
-                <li key={item}><a href="#" className="text-sm font-bold text-navy-900/40 hover:text-blue-600 transition-colors">{item}</a></li>
-              ))}
-            </ul>
-          </div>
-
-          <div>
-            <h4 className="text-[11px] font-bold uppercase tracking-[0.2em] text-navy-900 mb-8">Company</h4>
-            <ul className="space-y-4">
-              {["About Us", "Careers", "Privacy Policy", "Contact"].map(item => (
-                <li key={item}><a href="#" className="text-sm font-bold text-navy-900/40 hover:text-blue-600 transition-colors">{item}</a></li>
-              ))}
-            </ul>
-          </div>
+    <footer className="pb-8 px-6 bg-paper">
+      <div className="bg-navy-900 rounded-[40px] p-12 md:p-24 relative overflow-hidden shadow-2xl shadow-navy-900/20">
+        {/* Match CTA section decorative background */}
+        <div className="absolute inset-0 opacity-20 pointer-events-none">
+          <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(circle_at_50%_50%,#2563EB,transparent_70%)]" />
+          <div className="absolute top-0 left-0 w-full h-full bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-10" />
         </div>
+        
+        <div className="relative z-10">
+          <div className="grid md:grid-cols-4 gap-16 mb-24">
+            <div className="md:col-span-2">
+              <div className="flex items-center gap-2.5 mb-8">
+                <div className="flex items-center gap-2">
+                  <div className="w-2.5 h-2.5 rounded-full bg-blue-600"></div>
+                  <span className="font-bold text-xl text-white">Stag<span className="text-blue-600">.io</span></span>
+                </div>
+              </div>
+              <p className="text-white/70 font-medium max-w-sm leading-relaxed">
+                Empowering the Algerian academic community by bridging the gap between education and industry.
+              </p>
+            </div>
+            
+            <div>
+              <h4 className="text-[11px] font-bold uppercase tracking-[0.2em] text-white mb-8">Platform</h4>
+              <ul className="space-y-4">
+                {["Find Internships", "For Companies", "University Portal", "Success Stories"].map(item => (
+                  <li key={item}><a href="#" className="text-sm font-bold text-white/70 hover:text-white transition-colors">{item}</a></li>
+                ))}
+              </ul>
+            </div>
 
-        <div className="flex flex-col md:flex-row justify-between items-center pt-12 border-t border-gray-100 gap-6">
-          <p className="text-[11px] font-bold uppercase tracking-widest text-navy-900/20">© 2026 Stag.io — Algiers, Algeria</p>
-          <div className="flex items-center gap-2">
-            <span className="text-[11px] font-bold uppercase tracking-widest text-navy-900/20">Crafted for Algerian Excellence</span>
-            <div className="w-4 h-4 rounded-full bg-blue-600/10 flex items-center justify-center">
-              <div className="w-1.5 h-1.5 bg-blue-600 rounded-full" />
+            <div>
+              <h4 className="text-[11px] font-bold uppercase tracking-[0.2em] text-white mb-8">Company</h4>
+              <ul className="space-y-4">
+                {["About Us", "Careers", "Privacy Policy", "Contact"].map(item => (
+                  <li key={item}><a href="#" className="text-sm font-bold text-white/70 hover:text-white transition-colors">{item}</a></li>
+                ))}
+              </ul>
+            </div>
+          </div>
+
+          <div className="flex flex-col md:flex-row justify-between items-center pt-12 border-t border-white/10 gap-6">
+            <p className="text-[11px] font-bold uppercase tracking-widest text-white/40">© 2026 Stag.io — Constantine, Algeria</p>
+            <div className="flex items-center gap-2">
+              <span className="text-[11px] font-bold uppercase tracking-widest text-white/40">Crafted for Algerian Excellence</span>
+              <div className="w-4 h-4 rounded-full bg-blue-600/10 flex items-center justify-center">
+                <div className="w-1.5 h-1.5 bg-blue-600 rounded-full" />
+              </div>
             </div>
           </div>
         </div>
@@ -549,43 +558,70 @@ const Footer = () => {
 };
 
 const AboutUs = () => {
+  // Point to local files the user says are in src/components
+  const getImg = (name: string) => `/src/components/${name}`;
+
   return (
-    <section id="about-us" className="py-24 md:py-40 bg-white relative">
-      <div className="container mx-auto px-6">
-        <div className="max-w-5xl mx-auto">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.8 }}
-            className="space-y-16"
-          >
-            <div className="space-y-8">
-              <div className="inline-flex items-center gap-3 px-4 py-2 rounded-full bg-blue-50 border border-blue-100">
-                <div className="w-2 h-2 rounded-full bg-blue-600" />
-                <span className="text-[11px] font-bold uppercase tracking-[0.2em] text-blue-600 italic">Our Strategic Mission</span>
-              </div>
-              <h2 className="text-5xl md:text-7xl font-display font-bold text-navy-900 tracking-tight leading-[1.05] text-balance">
-                Digital Transformation of <br />
-                <span className="text-blue-600 italic">Higher Education.</span>
-              </h2>
+    <section id="about-us" className="bg-paper py-24 space-y-32">
+      <div className="mx-auto max-w-7xl px-6">
+        
+        {/* ROW 1: Image LEFT, Text RIGHT */}
+        <div className="grid gap-16 md:grid-cols-2 md:items-center mb-32">
+          <div className="order-1 flex justify-center">
+            <div className="aspect-square w-full max-w-md overflow-hidden rounded-3xl bg-white shadow-xl border border-navy-900/5">
+               <img src={getImg('stage.jpg')} className="h-full w-full object-cover" alt="Recruitment" />
             </div>
-            
-            <div className="max-w-3xl mx-auto space-y-8 text-xl text-navy-900/60 leading-relaxed font-medium">
-              <p>
-                This initiative aims to increase the employability of graduates by ensuring that their academic journey includes high-quality professional immersion through internships. The Department of IFA at the University of Constantine 2, being a center of excellence for Information Technology (TI), produces a high volume of technical profiles annually.
-              </p>
-              <div className="p-10 bg-paper rounded-[3rem] border border-gray-100 shadow-sm relative group overflow-hidden">
-                <div className="absolute top-0 right-0 p-8 text-navy-900/[0.03] select-none pointer-events-none">
-                  <Target size={120} />
-                </div>
-                <p className="text-navy-900 italic relative z-10">
-                  "However, the 'Area' of internship management is currently underserved by dedicated digital tools. The current environment relies on informal communication and manual paperwork, creating a 'disconnected area' where student potential and corporate needs fail to meet efficiently."
-                </p>
-              </div>
-            </div>
-          </motion.div>
+          </div>
+          <div className="order-2">
+            <span className="text-xs font-bold tracking-[0.2em] text-blue-600 uppercase">For Students</span>
+            <h2 className="mt-4 text-3xl font-bold tracking-tight text-navy-900 md:text-5xl">Find Your Opportunity</h2>
+            <p className="mt-6 text-lg leading-relaxed text-navy-900/60">
+  Stag.io helps you easily discover internships that match your field through a wide network of companies across Algeria.
+With a smart system, it recommends the best opportunities based on your skills and increases your chances of getting accepted quickly.            </p>
+            <button className="mt-8 flex items-center gap-2 rounded-full border-2 border-blue-600 px-8 py-2.5 text-sm font-bold text-blue-600 transition-all hover:bg-blue-600 hover:text-white">
+              Learn more <ChevronRight className="h-4 w-4" />
+            </button>
+          </div>
         </div>
+
+        {/* ROW 2: Text LEFT, Image RIGHT */}
+        <div className="grid gap-16 md:grid-cols-2 md:items-center mb-32">
+          <div className="order-2 md:order-1">
+            <span className="text-xs font-bold tracking-[0.2em] text-blue-600 uppercase">For Companies</span>
+            <h2 className="mt-4 text-3xl font-bold tracking-tight text-navy-900 md:text-5xl">Search thousands of CVs</h2>
+            <p className="mt-6 text-lg leading-relaxed text-navy-900/60">
+              Get in direct contact with thousands of qualified student candidates via our premium talent pool. Effortlessly find the right talent for every sector and every locality in minutes.
+            </p>
+            <button className="mt-8 flex items-center gap-2 rounded-full border-2 border-blue-600 px-8 py-2.5 text-sm font-bold text-blue-600 transition-all hover:bg-blue-600 hover:text-white">
+              Learn more <ChevronRight className="h-4 w-4" />
+            </button>
+          </div>
+          <div className="order-1 md:order-2 flex justify-center">
+            <div className="aspect-square w-full max-w-md overflow-hidden rounded-3xl bg-white shadow-xl border border-navy-900/5">
+               <img src={getImg('cv.jpg')} alt="Talent database" />
+            </div>
+          </div>
+        </div>
+
+        {/* ROW 3: Image LEFT, Text RIGHT */}
+        <div className="grid gap-16 md:grid-cols-2 md:items-center">
+          <div className="order-1 flex justify-center">
+            <div className="aspect-square w-full max-w-md overflow-hidden rounded-3xl bg-white shadow-xl border border-navy-900/5">
+               <img src={getImg('interview.jpg')} className="h-full w-full object-cover" alt="ATS Integrations" />
+            </div>
+          </div>
+          <div className="order-2">
+            <span className="text-xs font-bold tracking-[0.2em] text-blue-600 uppercase">Modern Solutions</span>
+            <h2 className="mt-4 text-3xl font-bold tracking-tight text-navy-900 md:text-5xl">Smart Talent Matching</h2>
+            <p className="mt-6 text-lg leading-relaxed text-navy-900/60">
+We are a platform that simplifies finding the most suitable students and interns for your needs using an advanced Matching Score system.
+It analyzes your requirements and connects you with top candidates who best fit your criteria, saving time and improving hiring efficiency.            </p>
+            <button className="mt-8 flex items-center gap-2 rounded-full border-2 border-blue-600 px-8 py-2.5 text-sm font-bold text-blue-600 transition-all hover:bg-blue-600 hover:text-white">
+              Learn more <ChevronRight className="h-4 w-4" />
+            </button>
+          </div>
+        </div>
+
       </div>
     </section>
   );
@@ -800,15 +836,19 @@ export default function LandingPage() {
       />
       <main>
         <Hero user={user} getDashboardLink={getDashboardLink} />
-        <AboutUs />
+
+        <AboutUs /> 
+        <h2 className="text-2xl md:text-6xl text-center font-display font-bold text-navy-900 mt-16 mb-6 tracking-tighter"> Stag.io by the Numbers</h2>
+          <p className="text-navy-900/60 font-medium max-w-2xl mx-auto text-lg mb-10">  An overview of our platform’s reach and growing community across Algeria.</p>
         <BentoStats />
         <Process />
-        <ContactSection />
+        <ContactSection /> 
         <CTA />
       </main>
       <Footer />
     </div>
   );
 }
+
 
 
